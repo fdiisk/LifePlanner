@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Mona+Sans:wght@400;600&display=swap');
+
+.login-container {
+  min-height: 100vh;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Mona Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 6px;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid black;
+  padding: 6px;
+}
+
+.login-box h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  padding: 6px;
+  border-bottom: 1px solid black;
+}
+
+.login-box form {
+  padding: 6px;
+}
+
+.login-box input[type="password"] {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid black;
+  font-family: 'Mona Sans', monospace;
+  font-size: 1rem;
+  margin-bottom: 6px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.login-box input[type="password"]:focus {
+  outline: none;
+  border: 1px solid black;
+}
+
+.login-box button {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid black;
+  background: white;
+  font-family: 'Mona Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.login-box button:hover:not(:disabled) {
+  background: black;
+  color: white;
+}
+
+.login-box button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-box .error {
+  color: black;
+  padding: 6px;
+  border: 1px solid black;
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
