@@ -1,7 +1,9 @@
+import { getDb, initDb } from '../lib/db.js';
+
 export async function callOpenRouter(prompt) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   const model = "meta-llama/llama-3.3-70b-instruct:free";
-  
+
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -14,11 +16,11 @@ export async function callOpenRouter(prompt) {
         messages: [{ role: "user", content: prompt }]
       })
     });
-    
+
     if (!response.ok) {
       throw new Error(`OpenRouter error: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
@@ -102,8 +104,6 @@ Categories:
 
 Return ONLY the category name, nothing else. Just the word: water, food, cardio, workout, sleep, or steps.`;
 }
-
-import { getDb, initDb } from '../lib/db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
