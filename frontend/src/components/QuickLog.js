@@ -59,7 +59,23 @@ function QuickLog({ apiUrl, onLogAdded }) {
         </div>
 
         <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? 'Processing...' : 'Add Entry'}
+          {loading ? (
+            <>
+              <svg className="spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="50" strokeDashoffset="0">
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 12 12"
+                    to="360 12 12"
+                    dur="1s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              </svg>
+              Processing...
+            </>
+          ) : 'Add Entry'}
         </button>
       </form>
 
