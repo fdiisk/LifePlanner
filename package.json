@@ -1,0 +1,14 @@
+{
+  "name": "life-planner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "cd frontend && npm install && npm run build"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "postgres": "^3.4.3"
+  }
+}
