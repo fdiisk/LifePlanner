@@ -89,8 +89,8 @@ export const FOOD_DB = {
   'pasta': { protein: 5, carbs: 25, fats: 0.9, calories: 131 }
 };
 
-export function categorizationPrompt(inputText) {
-  return `Categorize this health/fitness input and return category name.
+export function splitItemsPrompt(inputText) {
+  return `Split this health/fitness input into separate items. Extract each distinct activity/item with its time if mentioned.
 
 Input: "${inputText}"
 
@@ -102,7 +102,119 @@ Categories:
 - "sleep" - sleep duration/quality (slept 7hrs, 8 hours sleep, etc)
 - "steps" - step counts (10k steps, walked 8000 steps, etc)
 
-Return ONLY the category name, nothing else. Just the word: water, food, cardio, workout, sleep, or steps.`;
+Return ONLY this JSON (no other text):
+{
+  "items": [
+    {
+      "category": "water",
+      "text": "1L of water",
+      "time": "11am"
+    },
+    {
+      "category": "steps",
+      "text": "3k steps",
+      "time": null
+    }
+  ]
+}
+
+CRITICAL: Return valid JSON only. No explanations. Extract ALL items from the input.`;
+}
+
+export function parseWaterPrompt(inputText) {
+  return `Parse water intake into JSON.
+
+Input: "${inputText}"
+
+Return ONLY this JSON (no other text):
+{
+  "amount_ml": 1000
+}
+
+Convert to ml: 1L=1000ml, 1cup=250ml, etc.`;
+}
+
+export function parseStepsPrompt(inputText) {
+  return `Parse step count into JSON.
+
+Input: "${inputText}"
+
+Return ONLY this JSON (no other text):
+{
+  "total_steps": 3000,
+  "from_running": 0
+}
+
+Extract step count. 1k=1000, 10k=10000, etc.`;
+}
+
+export function parseCardioPrompt(inputText) {
+  return `Parse cardio activity into JSON.
+
+Input: "${inputText}"
+
+Return ONLY this JSON (no other text):
+{
+  "type": "running",
+  "distance_km": 5,
+  "duration_minutes": 30,
+  "pace_per_km": "6:00"
+}
+
+Extract distance, duration, and calculate pace if possible.`;
+}
+
+export function parseSleepPrompt(inputText) {
+  return `Parse sleep data into JSON.
+
+Input: "${inputText}"
+
+Return ONLY this JSON (no other text):
+{
+  "duration_hours": 7.5,
+  "quality_score": 8
+}
+
+Extract hours. Quality 1-10 if mentioned.`;
+}
+
+export function estimateFoodMacros(foodText) {
+  const estimates = {
+    'banana bread slice': { weight: 50, protein: 2.5, carbs: 26, fats: 3, calories: 145 },
+    'banana bread': { weight: 50, protein: 2.5, carbs: 26, fats: 3, calories: 145 },
+    'butter': { weight: 10, protein: 0.1, carbs: 0, fats: 8.1, calories: 74 },
+    'toast': { weight: 30, protein: 2.5, carbs: 15, fats: 1, calories: 80 },
+    'bread slice': { weight: 30, protein: 2.5, carbs: 15, fats: 1, calories: 80 },
+    'apple': { weight: 150, protein: 0.4, carbs: 19, fats: 0.3, calories: 77 },
+    'banana': { weight: 120, protein: 1.3, carbs: 27, fats: 0.4, calories: 105 },
+    'coffee': { weight: 240, protein: 0.3, carbs: 0, fats: 0, calories: 2 },
+    'milk': { weight: 240, protein: 8, carbs: 12, fats: 8, calories: 150 }
+  };
+
+  const lowerText = foodText.toLowerCase();
+  let totalProtein = 0, totalCarbs = 0, totalFats = 0, totalCalories = 0;
+  let foundItems = [];
+
+  for (const [food, macros] of Object.entries(estimates)) {
+    if (lowerText.includes(food)) {
+      totalProtein += macros.protein;
+      totalCarbs += macros.carbs;
+      totalFats += macros.fats;
+      totalCalories += macros.calories;
+      foundItems.push({ food, ...macros });
+    }
+  }
+
+  if (foundItems.length === 0) {
+    return { protein: 10, carbs: 20, fats: 5, calories: 150 };
+  }
+
+  return {
+    protein: Math.round(totalProtein * 10) / 10,
+    carbs: Math.round(totalCarbs * 10) / 10,
+    fats: Math.round(totalFats * 10) / 10,
+    calories: Math.round(totalCalories)
+  };
 }
 
 export default async function handler(req, res) {
@@ -128,67 +240,109 @@ export default async function handler(req, res) {
     }
 
     try {
-      // Use AI to categorize the input
-      const categoryPrompt = categorizationPrompt(input);
-      const categoryResponse = await callOpenRouter(categoryPrompt);
+      // Use AI to split input into multiple items
+      const splitPrompt = splitItemsPrompt(input);
+      const splitResponse = await callOpenRouter(splitPrompt);
 
-      if (!categoryResponse) {
-        return res.status(500).json({ error: 'Failed to categorize input' });
+      if (!splitResponse) {
+        return res.status(500).json({ error: 'Failed to process input' });
       }
 
-      const category = categoryResponse.trim().toLowerCase();
-
-      // Validate category
-      const validCategories = ['water', 'food', 'cardio', 'workout', 'sleep', 'steps'];
-      if (!validCategories.includes(category)) {
-        return res.status(400).json({ error: `Invalid category: ${category}` });
+      // Parse the split response
+      let resultText = splitResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+      const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        resultText = jsonMatch[0];
       }
 
-      // Parse the input based on category
-      let parsedData = null;
-      let parsePrompt = null;
+      const splitData = JSON.parse(resultText);
+      const items = splitData.items || [];
 
-      if (category === 'food') {
-        parsePrompt = parseFoodPrompt(input);
-      } else if (category === 'workout') {
-        parsePrompt = parseGymPrompt(input);
+      if (items.length === 0) {
+        return res.status(400).json({ error: 'No items found in input' });
       }
 
-      if (parsePrompt) {
-        const parseResponse = await callOpenRouter(parsePrompt);
-        if (parseResponse) {
-          try {
-            let resultText = parseResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              resultText = jsonMatch[0];
+      const createdLogs = [];
+
+      // Process each item separately
+      for (const item of items) {
+        const { category, text, time } = item;
+        let parsedData = null;
+        let parsePrompt = null;
+
+        // Parse based on category
+        if (category === 'water') {
+          parsePrompt = parseWaterPrompt(text);
+        } else if (category === 'food') {
+          // Use AI to parse food + estimate macros
+          parsePrompt = parseFoodPrompt(text);
+          const parseResponse = await callOpenRouter(parsePrompt);
+          if (parseResponse) {
+            try {
+              let foodText = parseResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+              const foodMatch = foodText.match(/\{[\s\S]*\}/);
+              if (foodMatch) foodText = foodMatch[0];
+              parsedData = JSON.parse(foodText);
+
+              // Add macro estimates for items without weight
+              if (parsedData.items) {
+                parsedData.items = parsedData.items.map(foodItem => {
+                  if (!foodItem.amount || foodItem.amount === 100) {
+                    const macros = estimateFoodMacros(foodItem.food);
+                    return { ...foodItem, ...macros };
+                  }
+                  return foodItem;
+                });
+              }
+            } catch (e) {
+              console.error('Failed to parse food:', e);
             }
-            parsedData = JSON.parse(resultText);
-          } catch (e) {
-            console.error('Failed to parse AI response:', e);
+          }
+        } else if (category === 'steps') {
+          parsePrompt = parseStepsPrompt(text);
+        } else if (category === 'cardio') {
+          parsePrompt = parseCardioPrompt(text);
+        } else if (category === 'workout') {
+          parsePrompt = parseGymPrompt(text);
+        } else if (category === 'sleep') {
+          parsePrompt = parseSleepPrompt(text);
+        }
+
+        // Parse data if we have a prompt and haven't already parsed (food case)
+        if (parsePrompt && !parsedData) {
+          const parseResponse = await callOpenRouter(parsePrompt);
+          if (parseResponse) {
+            try {
+              let parseText = parseResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+              const parseMatch = parseText.match(/\{[\s\S]*\}/);
+              if (parseMatch) parseText = parseMatch[0];
+              parsedData = JSON.parse(parseText);
+            } catch (e) {
+              console.error('Failed to parse item:', e);
+            }
           }
         }
+
+        // Insert into database
+        const result = await sql`
+          INSERT INTO pending_logs (date, category, raw_input, parsed_data)
+          VALUES (${date}, ${category}, ${text}, ${parsedData ? JSON.stringify(parsedData) : null})
+          RETURNING *
+        `;
+
+        createdLogs.push(result[0]);
       }
-
-      // Insert into database
-      const result = await sql`
-        INSERT INTO pending_logs (date, category, raw_input, parsed_data)
-        VALUES (${date}, ${category}, ${input}, ${parsedData ? JSON.stringify(parsedData) : null})
-        RETURNING *
-      `;
-
-      const log = result[0];
 
       return res.status(200).json({
         success: true,
-        message: `${category.charAt(0).toUpperCase() + category.slice(1)} entry logged`,
-        log: {
+        message: `${createdLogs.length} entr${createdLogs.length === 1 ? 'y' : 'ies'} logged`,
+        logs: createdLogs.map(log => ({
           id: log.id,
           category: log.category,
           raw_input: log.raw_input,
           parsed_data: log.parsed_data,
           logged_at: log.logged_at
-        }
+        }))
       });
 
     } catch (error) {

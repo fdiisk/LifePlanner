@@ -19,10 +19,13 @@ function QuickLog({ apiUrl, onLogAdded }) {
         date: new Date().toISOString().split('T')[0]
       });
 
+      const logs = response.data.logs || [response.data.log];
+      const categories = [...new Set(logs.map(l => l.category))].join(', ');
+
       setResult({
         type: 'success',
         message: response.data.message,
-        category: response.data.log.category
+        category: categories
       });
       setInput('');
       
