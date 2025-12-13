@@ -86,3 +86,178 @@ export const FOOD_DB = {
   'beef': { protein: 26, carbs: 0, fats: 15, calories: 250 },
   'pasta': { protein: 5, carbs: 25, fats: 0.9, calories: 131 }
 };
+
+export function categorizationPrompt(inputText) {
+  return `Categorize this health/fitness input and return category name.
+
+Input: "${inputText}"
+
+Categories:
+- "water" - drinking water (1l water, 500ml, had water, etc)
+- "food" - eating meals/snacks (chicken rice, banana, breakfast, etc)
+- "cardio" - running/cycling (ran 5k, 30min run, etc)
+- "workout" - gym/strength training (bench press, squats, weights, etc)
+- "sleep" - sleep duration/quality (slept 7hrs, 8 hours sleep, etc)
+- "steps" - step counts (10k steps, walked 8000 steps, etc)
+
+Return ONLY the category name, nothing else. Just the word: water, food, cardio, workout, sleep, or steps.`;
+}
+
+import { getDb, initDb } from '../lib/db.js';
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  const sql = getDb();
+  await initDb();
+
+  // POST - Create new pending log
+  if (req.method === 'POST') {
+    const { input, date } = req.body;
+
+    if (!input || !date) {
+      return res.status(400).json({ error: 'Missing input or date' });
+    }
+
+    try {
+      // Use AI to categorize the input
+      const categoryPrompt = categorizationPrompt(input);
+      const categoryResponse = await callOpenRouter(categoryPrompt);
+
+      if (!categoryResponse) {
+        return res.status(500).json({ error: 'Failed to categorize input' });
+      }
+
+      const category = categoryResponse.trim().toLowerCase();
+
+      // Validate category
+      const validCategories = ['water', 'food', 'cardio', 'workout', 'sleep', 'steps'];
+      if (!validCategories.includes(category)) {
+        return res.status(400).json({ error: `Invalid category: ${category}` });
+      }
+
+      // Parse the input based on category
+      let parsedData = null;
+      let parsePrompt = null;
+
+      if (category === 'food') {
+        parsePrompt = parseFoodPrompt(input);
+      } else if (category === 'workout') {
+        parsePrompt = parseGymPrompt(input);
+      }
+
+      if (parsePrompt) {
+        const parseResponse = await callOpenRouter(parsePrompt);
+        if (parseResponse) {
+          try {
+            let resultText = parseResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              resultText = jsonMatch[0];
+            }
+            parsedData = JSON.parse(resultText);
+          } catch (e) {
+            console.error('Failed to parse AI response:', e);
+          }
+        }
+      }
+
+      // Insert into database
+      const result = await sql`
+        INSERT INTO pending_logs (date, category, raw_input, parsed_data)
+        VALUES (${date}, ${category}, ${input}, ${parsedData ? JSON.stringify(parsedData) : null})
+        RETURNING *
+      `;
+
+      const log = result[0];
+
+      return res.status(200).json({
+        success: true,
+        message: `${category.charAt(0).toUpperCase() + category.slice(1)} entry logged`,
+        log: {
+          id: log.id,
+          category: log.category,
+          raw_input: log.raw_input,
+          parsed_data: log.parsed_data,
+          logged_at: log.logged_at
+        }
+      });
+
+    } catch (error) {
+      console.error('Error creating pending log:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  // GET - Fetch pending logs for a date
+  if (req.method === 'GET') {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ error: 'Missing date parameter' });
+    }
+
+    try {
+      const logs = await sql`
+        SELECT * FROM pending_logs
+        WHERE date = ${date} AND compiled = false
+        ORDER BY logged_at ASC
+      `;
+
+      // Group by category
+      const groupedLogs = {
+        water: [],
+        food: [],
+        cardio: [],
+        workout: [],
+        sleep: [],
+        steps: []
+      };
+
+      logs.forEach(log => {
+        if (groupedLogs[log.category]) {
+          groupedLogs[log.category].push({
+            id: log.id,
+            raw_input: log.raw_input,
+            parsed_data: log.parsed_data,
+            logged_at: log.logged_at
+          });
+        }
+      });
+
+      return res.status(200).json({ logs: groupedLogs });
+
+    } catch (error) {
+      console.error('Error fetching pending logs:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  // DELETE - Remove a pending log
+  if (req.method === 'DELETE') {
+    const { id } = req.query;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Missing id parameter' });
+    }
+
+    try {
+      await sql`DELETE FROM pending_logs WHERE id = ${id}`;
+      return res.status(200).json({ success: true });
+
+    } catch (error) {
+      console.error('Error deleting pending log:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
