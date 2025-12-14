@@ -47,6 +47,10 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
       confirmText: 'Delete',
       type: 'danger',
       onConfirm: async () => {
+        // Close modal immediately
+        setModalConfig({ isOpen: false });
+
+        // Delete in background
         try {
           await axios.delete(`${apiUrl}/pending-log?id=${id}`);
           fetchPendingLogs();
@@ -177,32 +181,52 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
                         Delete
                       </button>
                     </div>
-                    <div className="pending-item-content">
-                      {entry.raw_input}
-                    </div>
                     {entry.parsed_data && (
                       <div className="pending-item-parsed">
-                        {category === 'water' && entry.parsed_data.amount_ml && (
-                          <span>{entry.parsed_data.amount_ml}ml</span>
-                        )}
                         {category === 'food' && entry.parsed_data.items && (
-                          <span>{entry.parsed_data.items.length} items</span>
+                          <div className="food-items-list">
+                            {entry.parsed_data.items.map((item, i) => (
+                              <div key={i} className="food-item-detail">
+                                <div className="food-item-name">
+                                  {item.food}
+                                  {item.preparation && <span className="food-prep">, {item.preparation}</span>}
+                                </div>
+                                <div className="food-item-amount">
+                                  {item.amount}{item.unit || 'g'}
+                                </div>
+                                <div className="food-item-macros">
+                                  {item.calories}cal · {item.protein}p · {item.carbs}c · {item.fats}f
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {category === 'steps' && entry.parsed_data.total_steps && (
+                          <div className="formatted-value">
+                            {entry.parsed_data.total_steps.toLocaleString()} Steps
+                          </div>
+                        )}
+                        {category === 'water' && entry.parsed_data.amount_ml && (
+                          <div className="formatted-value">
+                            {(entry.parsed_data.amount_ml / 1000).toFixed(1)}L Water
+                          </div>
                         )}
                         {category === 'cardio' && entry.parsed_data.type && (
-                          <span>
+                          <div className="formatted-value">
                             {entry.parsed_data.type}
                             {entry.parsed_data.distance_km && ` · ${entry.parsed_data.distance_km}km`}
                             {entry.parsed_data.pace_per_km && ` · ${entry.parsed_data.pace_per_km}/km`}
-                          </span>
+                          </div>
                         )}
                         {category === 'workout' && entry.parsed_data.exercises && (
-                          <span>{entry.parsed_data.exercises.length} exercises</span>
+                          <div className="formatted-value">
+                            {entry.parsed_data.exercises.length} exercises
+                          </div>
                         )}
                         {category === 'sleep' && entry.parsed_data.duration_hours && (
-                          <span>{entry.parsed_data.duration_hours}hrs</span>
-                        )}
-                        {category === 'steps' && entry.parsed_data.total_steps && (
-                          <span>{entry.parsed_data.total_steps.toLocaleString()} steps</span>
+                          <div className="formatted-value">
+                            {entry.parsed_data.duration_hours}hrs sleep
+                          </div>
                         )}
                       </div>
                     )}
