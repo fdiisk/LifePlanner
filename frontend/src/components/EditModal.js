@@ -202,6 +202,37 @@ function EditModal({ isOpen, onClose, onSave, entry, category }) {
     );
   };
 
+  const renderCaffeineEditor = () => {
+    return (
+      <div className="edit-form">
+        <div className="form-group">
+          <label>Drink Type:</label>
+          <input
+            type="text"
+            value={editedData.drink_type || ''}
+            onChange={(e) => setEditedData({ ...editedData, drink_type: e.target.value })}
+          />
+        </div>
+        <div className="form-group">
+          <label>Caffeine (mg):</label>
+          <input
+            type="number"
+            value={editedData.caffeine_mg || ''}
+            onChange={(e) => setEditedData({ ...editedData, caffeine_mg: parseInt(e.target.value) })}
+          />
+        </div>
+        <div className="form-group">
+          <label>Quantity:</label>
+          <input
+            type="number"
+            value={editedData.quantity || ''}
+            onChange={(e) => setEditedData({ ...editedData, quantity: parseInt(e.target.value) })}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content edit-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -210,6 +241,7 @@ function EditModal({ isOpen, onClose, onSave, entry, category }) {
         {category === 'food' && renderFoodEditor()}
         {category === 'water' && renderWaterEditor()}
         {category === 'steps' && renderStepsEditor()}
+        {category === 'caffeine' && renderCaffeineEditor()}
         {category === 'sleep' && renderSleepEditor()}
 
         <div className="modal-actions">
