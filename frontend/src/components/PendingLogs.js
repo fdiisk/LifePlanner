@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
+import EditModal from './EditModal';
 
 function PendingLogs({ apiUrl, refreshTrigger }) {
   const [logs, setLogs] = useState({
@@ -15,6 +16,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
   const [compiling, setCompiling] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [modalConfig, setModalConfig] = useState({ isOpen: false });
+  const [editModalConfig, setEditModalConfig] = useState({ isOpen: false, entry: null, category: null });
 
   const fetchPendingLogs = useCallback(async () => {
     setLoading(true);
@@ -46,19 +48,33 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
       message: 'Are you sure you want to delete this entry?',
       confirmText: 'Delete',
       type: 'danger',
-      onConfirm: async () => {
-        // Close modal immediately
-        setModalConfig({ isOpen: false });
-
-        // Delete in background
-        try {
-          await axios.delete(`${apiUrl}/pending-log?id=${id}`);
-          fetchPendingLogs();
-        } catch (error) {
-          console.error('Error deleting log:', error);
-        }
+      onConfirm: () => {
+        // Modal will close automatically, just delete in background
+        axios.delete(`${apiUrl}/pending-log?id=${id}`)
+          .then(() => fetchPendingLogs())
+          .catch(error => console.error('Error deleting log:', error));
       }
     });
+  };
+
+  const handleEdit = (entry, category) => {
+    setEditModalConfig({
+      isOpen: true,
+      entry: entry,
+      category: category
+    });
+  };
+
+  const handleSaveEdit = async (parsedData) => {
+    try {
+      await axios.put(`${apiUrl}/pending-log`, {
+        id: editModalConfig.entry.id,
+        parsed_data: parsedData
+      });
+      fetchPendingLogs();
+    } catch (error) {
+      console.error('Error updating log:', error);
+    }
   };
 
   const handleCompileDay = () => {
@@ -174,12 +190,20 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
                   <div key={entry.id} className="pending-item">
                     <div className="pending-item-header">
                       <span className="pending-time">{formatTime(entry.logged_at)}</span>
-                      <button 
-                        className="btn-delete"
-                        onClick={() => handleDelete(entry.id)}
-                      >
-                        Delete
-                      </button>
+                      <div className="pending-item-actions">
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleEdit(entry, category)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDelete(entry.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     {entry.parsed_data && (
                       <div className="pending-item-parsed">
@@ -268,6 +292,14 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
         message={modalConfig.message}
         confirmText={modalConfig.confirmText}
         type={modalConfig.type}
+      />
+
+      <EditModal
+        isOpen={editModalConfig.isOpen}
+        onClose={() => setEditModalConfig({ isOpen: false, entry: null, category: null })}
+        onSave={handleSaveEdit}
+        entry={editModalConfig.entry}
+        category={editModalConfig.category}
       />
     </div>
   );
