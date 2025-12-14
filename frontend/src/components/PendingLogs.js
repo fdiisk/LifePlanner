@@ -11,6 +11,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
     steps: []
   });
   const [loading, setLoading] = useState(true);
+  const [compiling, setCompiling] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const fetchPendingLogs = useCallback(async () => {
@@ -47,6 +48,25 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
     }
   };
 
+  const handleCompileDay = async () => {
+    if (!window.confirm('Compile all entries for this day? This will finalize them into your logs.')) return;
+
+    setCompiling(true);
+    try {
+      const response = await axios.post(`${apiUrl}/compile-day`, {
+        date: selectedDate
+      });
+
+      alert(response.data.message + `\n\nProcessed: ${response.data.totalLogs} entries`);
+      fetchPendingLogs(); // Refresh to show compiled logs are gone
+    } catch (error) {
+      console.error('Error compiling day:', error);
+      alert(error.response?.data?.error || 'Failed to compile day');
+    } finally {
+      setCompiling(false);
+    }
+  };
+
   const getCategoryIcon = (category) => {
     const icons = {
       water: '💧',
@@ -67,7 +87,23 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
   };
 
   if (loading) {
-    return <div className="loading">Loading pending logs...</div>;
+    return (
+      <div className="loading">
+        <svg className="spinner" viewBox="0 0 24 24" style={{ width: '24px', height: '24px', marginRight: '8px' }}>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="50" strokeDashoffset="0">
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from="0 12 12"
+              to="360 12 12"
+              dur="1s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </svg>
+        Loading pending logs...
+      </div>
+    );
   }
 
   const hasLogs = logs && Object.values(logs).some(arr => arr.length > 0);
@@ -145,8 +181,24 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
           })}
 
           <div className="pending-actions">
-            <button className="btn-primary">
-              Review & Compile Day
+            <button className="btn-primary" onClick={handleCompileDay} disabled={compiling}>
+              {compiling ? (
+                <>
+                  <svg className="spinner" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="50" strokeDashoffset="0">
+                      <animateTransform
+                        attributeName="transform"
+                        type="rotate"
+                        from="0 12 12"
+                        to="360 12 12"
+                        dur="1s"
+                        repeatCount="indefinite"
+                      />
+                    </circle>
+                  </svg>
+                  Compiling...
+                </>
+              ) : 'Review & Compile Day'}
             </button>
           </div>
         </>

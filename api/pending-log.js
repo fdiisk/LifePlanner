@@ -323,10 +323,28 @@ export default async function handler(req, res) {
           }
         }
 
-        // Insert into database
+        // Calculate timestamp based on extracted time
+        let loggedAt = new Date();
+        if (time) {
+          // Parse time like "11am", "2:30pm", etc
+          const timeMatch = time.toLowerCase().match(/(\d+)(?::(\d+))?\s*(am|pm)?/);
+          if (timeMatch) {
+            let hours = parseInt(timeMatch[1]);
+            const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+            const ampm = timeMatch[3];
+
+            if (ampm === 'pm' && hours !== 12) hours += 12;
+            if (ampm === 'am' && hours === 12) hours = 0;
+
+            loggedAt = new Date(date);
+            loggedAt.setHours(hours, minutes, 0, 0);
+          }
+        }
+
+        // Insert into database with calculated timestamp
         const result = await sql`
-          INSERT INTO pending_logs (date, category, raw_input, parsed_data)
-          VALUES (${date}, ${category}, ${text}, ${parsedData ? JSON.stringify(parsedData) : null})
+          INSERT INTO pending_logs (date, category, raw_input, parsed_data, logged_at)
+          VALUES (${date}, ${category}, ${text}, ${parsedData ? JSON.stringify(parsedData) : null}, ${loggedAt})
           RETURNING *
         `;
 
