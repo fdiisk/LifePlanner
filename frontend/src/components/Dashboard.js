@@ -287,13 +287,36 @@ function Dashboard({ apiUrl }) {
                         <div className="pending-item-content">
                           {entry.raw_input}
                         </div>
-                        {entry.parsed_data && category === 'food' && entry.parsed_data.items && (
+                        {entry.parsed_data && (
                           <div className="pending-item-parsed">
-                            {entry.parsed_data.items.map((item, i) => (
-                              <div key={i}>
-                                {item.food}: {item.calories}cal ({item.protein}p/{item.carbs}c/{item.fats}f)
+                            {category === 'food' && entry.parsed_data.items && (
+                              <div className="food-items-list">
+                                {entry.parsed_data.items.map((item, i) => (
+                                  <div key={i} className="food-item-detail">
+                                    <div className="food-item-name">
+                                      {item.food}
+                                      {item.preparation && <span className="food-prep">, {item.preparation}</span>}
+                                    </div>
+                                    <div className="food-item-amount">
+                                      {item.amount}{item.unit || 'g'}
+                                    </div>
+                                    <div className="food-item-macros">
+                                      {item.calories}cal · {item.protein}p · {item.carbs}c · {item.fats}f
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
+                            {category === 'steps' && entry.parsed_data.total_steps && (
+                              <div className="formatted-value">
+                                {entry.parsed_data.total_steps.toLocaleString()} Steps
+                              </div>
+                            )}
+                            {category === 'water' && entry.parsed_data.amount_ml && (
+                              <div className="formatted-value">
+                                {(entry.parsed_data.amount_ml / 1000).toFixed(1)}L Water
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

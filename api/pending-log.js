@@ -57,23 +57,53 @@ Do NOT write code. Do NOT explain. ONLY return JSON.`;
 }
 
 export function parseFoodPrompt(inputText) {
-  return `Parse food input into JSON. Extract food items with amounts.
+  return `Parse food input into MODULAR JSON. Break down complex items into separate components.
 
 Input: "${inputText}"
+
+Rules:
+1. Split complex items: "fried chicken burger" → chicken + bun + toppings separately
+2. Estimate reasonable amounts if not specified
+3. Include preparation method if mentioned or strongly inferred
+4. For small/common items (butter, condiments), use standard amounts
+5. Each item should be separate
 
 Return ONLY this JSON (no other text):
 {
   "items": [
     {
-      "food": "chicken",
-      "amount": 200,
-      "unit": "g"
+      "food": "chicken thigh",
+      "amount": 150,
+      "unit": "g",
+      "preparation": "fried",
+      "needsClarification": false,
+      "clarificationOptions": []
+    },
+    {
+      "food": "brioche bun",
+      "amount": 60,
+      "unit": "g",
+      "preparation": "",
+      "needsClarification": false,
+      "clarificationOptions": []
+    },
+    {
+      "food": "butter",
+      "amount": 10,
+      "unit": "g",
+      "preparation": "",
+      "needsClarification": false,
+      "clarificationOptions": []
     }
   ]
 }
 
-Extract all foods. Convert to grams. If no amount, use 100g.
-Do NOT write code. Do NOT explain. ONLY return JSON.`;
+Examples:
+- "banana bread slice toasted with butter" → banana bread slice (50g, toasted) + butter (10g)
+- "fried chicken burger" → chicken thigh (150g, fried) + brioche bun (60g) + pickles (optional, ask)
+- "toast with butter" → bread slice (30g, toasted) + butter (10g)
+
+CRITICAL: Return valid JSON only. Break down all components. Estimate amounts reasonably.`;
 }
 
 export const FOOD_DB = {
@@ -178,42 +208,74 @@ Return ONLY this JSON (no other text):
 Extract hours. Quality 1-10 if mentioned.`;
 }
 
-export function estimateFoodMacros(foodText) {
-  const estimates = {
-    'banana bread slice': { weight: 50, protein: 2.5, carbs: 26, fats: 3, calories: 145 },
-    'banana bread': { weight: 50, protein: 2.5, carbs: 26, fats: 3, calories: 145 },
-    'butter': { weight: 10, protein: 0.1, carbs: 0, fats: 8.1, calories: 74 },
-    'toast': { weight: 30, protein: 2.5, carbs: 15, fats: 1, calories: 80 },
-    'bread slice': { weight: 30, protein: 2.5, carbs: 15, fats: 1, calories: 80 },
-    'apple': { weight: 150, protein: 0.4, carbs: 19, fats: 0.3, calories: 77 },
-    'banana': { weight: 120, protein: 1.3, carbs: 27, fats: 0.4, calories: 105 },
-    'coffee': { weight: 240, protein: 0.3, carbs: 0, fats: 0, calories: 2 },
-    'milk': { weight: 240, protein: 8, carbs: 12, fats: 8, calories: 150 }
+export function estimateFoodMacros(foodItem) {
+  // Per 100g macros database
+  const macrosDb = {
+    // Proteins
+    'chicken thigh': { protein: 24, carbs: 0, fats: 11, calories: 195 },
+    'chicken breast': { protein: 31, carbs: 0, fats: 3.6, calories: 165 },
+    'chicken': { protein: 27, carbs: 0, fats: 7, calories: 180 },
+    'beef': { protein: 26, carbs: 0, fats: 15, calories: 250 },
+    'salmon': { protein: 20, carbs: 0, fats: 13, calories: 208 },
+    'egg': { protein: 13, carbs: 1.1, fats: 11, calories: 155 },
+
+    // Carbs
+    'rice': { protein: 2.7, carbs: 28, fats: 0.3, calories: 130 },
+    'pasta': { protein: 5, carbs: 25, fats: 0.9, calories: 131 },
+    'oats': { protein: 13.2, carbs: 67, fats: 6.5, calories: 389 },
+    'bread slice': { protein: 8.3, carbs: 50, fats: 3.3, calories: 265 },
+    'bread': { protein: 8.3, carbs: 50, fats: 3.3, calories: 265 },
+    'brioche bun': { protein: 8, carbs: 50, fats: 8, calories: 310 },
+    'bun': { protein: 8, carbs: 48, fats: 4, calories: 260 },
+    'potato': { protein: 2, carbs: 17, fats: 0.1, calories: 77 },
+    'banana bread': { protein: 5, carbs: 52, fats: 6, calories: 290 },
+
+    // Fats
+    'butter': { protein: 0.9, carbs: 0.1, fats: 81, calories: 717 },
+    'avocado': { protein: 2, carbs: 9, fats: 15, calories: 160 },
+    'olive oil': { protein: 0, carbs: 0, fats: 100, calories: 884 },
+
+    // Vegetables
+    'broccoli': { protein: 2.8, carbs: 7, fats: 0.4, calories: 34 },
+    'spinach': { protein: 2.9, carbs: 3.6, fats: 0.4, calories: 23 },
+    'tomato': { protein: 0.9, carbs: 3.9, fats: 0.2, calories: 18 },
+    'lettuce': { protein: 1.4, carbs: 2.9, fats: 0.1, calories: 15 },
+    'pickles': { protein: 0.3, carbs: 2.3, fats: 0.1, calories: 11 },
+
+    // Fruits
+    'banana': { protein: 1.1, carbs: 23, fats: 0.3, calories: 89 },
+    'apple': { protein: 0.3, carbs: 14, fats: 0.2, calories: 52 }
   };
 
-  const lowerText = foodText.toLowerCase();
-  let totalProtein = 0, totalCarbs = 0, totalFats = 0, totalCalories = 0;
-  let foundItems = [];
+  const { food, amount = 100, unit = 'g' } = foodItem;
+  const lowerFood = food.toLowerCase();
 
-  for (const [food, macros] of Object.entries(estimates)) {
-    if (lowerText.includes(food)) {
-      totalProtein += macros.protein;
-      totalCarbs += macros.carbs;
-      totalFats += macros.fats;
-      totalCalories += macros.calories;
-      foundItems.push({ food, ...macros });
+  // Find closest match in database
+  let macros = macrosDb[lowerFood];
+
+  // If exact match not found, try partial matching
+  if (!macros) {
+    for (const [key, value] of Object.entries(macrosDb)) {
+      if (lowerFood.includes(key) || key.includes(lowerFood)) {
+        macros = value;
+        break;
+      }
     }
   }
 
-  if (foundItems.length === 0) {
-    return { protein: 10, carbs: 20, fats: 5, calories: 150 };
+  // Default macros if nothing found
+  if (!macros) {
+    macros = { protein: 10, carbs: 20, fats: 5, calories: 150 };
   }
 
+  // Calculate based on amount (macros are per 100g)
+  const multiplier = amount / 100;
+
   return {
-    protein: Math.round(totalProtein * 10) / 10,
-    carbs: Math.round(totalCarbs * 10) / 10,
-    fats: Math.round(totalFats * 10) / 10,
-    calories: Math.round(totalCalories)
+    protein: Math.round(macros.protein * multiplier * 10) / 10,
+    carbs: Math.round(macros.carbs * multiplier * 10) / 10,
+    fats: Math.round(macros.fats * multiplier * 10) / 10,
+    calories: Math.round(macros.calories * multiplier)
   };
 }
 
@@ -284,14 +346,17 @@ export default async function handler(req, res) {
               if (foodMatch) foodText = foodMatch[0];
               parsedData = JSON.parse(foodText);
 
-              // Add macro estimates for items without weight
+              // Add macro estimates for all items
               if (parsedData.items) {
                 parsedData.items = parsedData.items.map(foodItem => {
-                  if (!foodItem.amount || foodItem.amount === 100) {
-                    const macros = estimateFoodMacros(foodItem.food);
-                    return { ...foodItem, ...macros };
-                  }
-                  return foodItem;
+                  const macros = estimateFoodMacros(foodItem);
+                  return {
+                    ...foodItem,
+                    protein: macros.protein,
+                    carbs: macros.carbs,
+                    fats: macros.fats,
+                    calories: macros.calories
+                  };
                 });
               }
             } catch (e) {
@@ -336,16 +401,19 @@ export default async function handler(req, res) {
             if (ampm === 'pm' && hours !== 12) hours += 12;
             if (ampm === 'am' && hours === 12) hours = 0;
 
-            // Create date in local timezone
+            // Create date in local timezone using ISO string to avoid timezone issues
             const [year, month, day] = date.split('-').map(Number);
             loggedAt = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+            // Log for debugging
+            console.log(`[TIME DEBUG] Input time: ${time}, Parsed: ${hours}:${minutes}, Created date: ${loggedAt.toISOString()}, Local: ${loggedAt.toString()}`);
           }
         }
 
         // Insert into database with calculated timestamp
         const result = await sql`
           INSERT INTO pending_logs (date, category, raw_input, parsed_data, logged_at)
-          VALUES (${date}, ${category}, ${text}, ${parsedData ? JSON.stringify(parsedData) : null}, ${loggedAt})
+          VALUES (${date}, ${category}, ${text}, ${parsedData ? JSON.stringify(parsedData) : null}, ${loggedAt.toISOString()})
           RETURNING *
         `;
 
