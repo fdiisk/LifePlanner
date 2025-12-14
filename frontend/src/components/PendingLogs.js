@@ -7,6 +7,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
   const [logs, setLogs] = useState({
     water: [],
     food: [],
+    caffeine: [],
     cardio: [],
     workout: [],
     sleep: [],
@@ -25,6 +26,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
       setLogs(response.data.logs || {
         water: [],
         food: [],
+        caffeine: [],
         cardio: [],
         workout: [],
         sleep: [],
@@ -123,6 +125,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
     const icons = {
       water: '💧',
       food: '🍽️',
+      caffeine: '☕',
       cardio: '🏃',
       workout: '💪',
       sleep: '😴',
@@ -247,6 +250,12 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
                         {category === 'water' && entry.parsed_data.amount_ml && (
                           <div className="formatted-value">
                             {(entry.parsed_data.amount_ml / 1000).toFixed(1)}L Water
+                          </div>
+                        )}
+                        {category === 'caffeine' && entry.parsed_data.caffeine_mg && (
+                          <div className="formatted-value">
+                            {entry.parsed_data.drink_type && `${entry.parsed_data.drink_type} · `}
+                            {entry.parsed_data.caffeine_mg}mg Caffeine
                           </div>
                         )}
                         {category === 'cardio' && entry.parsed_data.type && (

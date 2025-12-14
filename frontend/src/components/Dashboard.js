@@ -8,6 +8,7 @@ function Dashboard({ apiUrl }) {
   const [logs, setLogs] = useState({
     water: [],
     food: [],
+    caffeine: [],
     cardio: [],
     workout: [],
     sleep: [],
@@ -19,7 +20,8 @@ function Dashboard({ apiUrl }) {
     carbs: 0,
     fats: 0,
     water: 0,
-    steps: 0
+    steps: 0,
+    caffeine: 0
   });
   const [loading, setLoading] = useState(true);
   const [compiling, setCompiling] = useState(false);
@@ -33,6 +35,7 @@ function Dashboard({ apiUrl }) {
       const fetchedLogs = response.data.logs || {
         water: [],
         food: [],
+        caffeine: [],
         cardio: [],
         workout: [],
         sleep: [],
@@ -52,7 +55,7 @@ function Dashboard({ apiUrl }) {
   }, [selectedDate, fetchPendingLogs]);
 
   const calculateTotals = (logsData) => {
-    let calories = 0, protein = 0, carbs = 0, fats = 0, water = 0, steps = 0;
+    let calories = 0, protein = 0, carbs = 0, fats = 0, water = 0, steps = 0, caffeine = 0;
 
     // Food
     logsData.food.forEach(log => {
@@ -73,6 +76,13 @@ function Dashboard({ apiUrl }) {
       }
     });
 
+    // Caffeine
+    logsData.caffeine.forEach(log => {
+      if (log.parsed_data?.caffeine_mg) {
+        caffeine += log.parsed_data.caffeine_mg;
+      }
+    });
+
     // Steps
     logsData.steps.forEach(log => {
       if (log.parsed_data?.total_steps) {
@@ -86,7 +96,8 @@ function Dashboard({ apiUrl }) {
       carbs: Math.round(carbs * 10) / 10,
       fats: Math.round(fats * 10) / 10,
       water: Math.round(water),
-      steps
+      steps,
+      caffeine: Math.round(caffeine)
     });
   };
 
@@ -209,6 +220,7 @@ function Dashboard({ apiUrl }) {
     const icons = {
       water: '💧',
       food: '🍽️',
+      caffeine: '☕',
       cardio: '🏃',
       workout: '💪',
       sleep: '😴',
@@ -282,6 +294,10 @@ function Dashboard({ apiUrl }) {
           <div className="macro-item">
             <div className="macro-value">{totals.steps.toLocaleString()}</div>
             <div className="macro-label">Steps</div>
+          </div>
+          <div className="macro-item">
+            <div className="macro-value">{totals.caffeine}mg</div>
+            <div className="macro-label">Caffeine</div>
           </div>
         </div>
       </div>
@@ -357,6 +373,12 @@ function Dashboard({ apiUrl }) {
                             {category === 'water' && entry.parsed_data.amount_ml && (
                               <div className="formatted-value">
                                 {(entry.parsed_data.amount_ml / 1000).toFixed(1)}L Water
+                              </div>
+                            )}
+                            {category === 'caffeine' && entry.parsed_data.caffeine_mg && (
+                              <div className="formatted-value">
+                                {entry.parsed_data.drink_type && `${entry.parsed_data.drink_type} · `}
+                                {entry.parsed_data.caffeine_mg}mg Caffeine
                               </div>
                             )}
                           </div>

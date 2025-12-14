@@ -57,39 +57,48 @@ Do NOT write code. Do NOT explain. ONLY return JSON.`;
 }
 
 export function parseFoodPrompt(inputText) {
-  return `Parse food input into MODULAR JSON. Break down complex items into separate components.
+  return `Parse food input into MODULAR JSON. Break down into separate ingredient components.
 
 Input: "${inputText}"
 
-IMPORTANT - BRANDED PRODUCT DETECTION:
-If the input mentions specific brands or stores (Coles, Woolworths, 7-11, McDonald's, KFC, Hungry Jack's, Subway, Red Rooster, Oporto, etc.), search your knowledge base for EXACT nutrition facts from:
+CONTEXT AWARENESS - AVOID DUPLICATES:
+- When user lists ingredients with amounts (e.g., "200g mince", "1 slice cheese"), they are listing INDIVIDUAL ingredients
+- DO NOT create duplicate items when a word appears in different contexts
+- Example: "200g mince burger, burger cheese" = mince patty + cheese (NOT two separate burgers)
+- "burger cheese" = cheese for a burger, not a burger item
+- "burger bun" = bun, not a burger
+- Parse holistically - if listing ingredients with amounts/quantities, treat each as ONE item
+- User preference: When home-cooked meals are described with individual ingredients, list each ingredient separately
+
+BRANDED PRODUCT DETECTION:
+If input mentions specific brands/stores (Coles, Woolworths, 7-11, McDonald's, KFC, Hungry Jack's, Subway, Heinz, etc.), search your knowledge base for EXACT nutrition facts from:
 1. CalorieKing Australia database
 2. MyFitnessPal verified entries
 3. Official brand nutrition information
 
-For branded items, return accurate macros from these sources. Mark dataSource as "verified:[source]" (e.g., "verified:CalorieKing", "verified:MyFitnessPal", "verified:Brand").
+For branded items, return accurate macros from these sources. Mark dataSource as "verified:[source]".
 For generic/unbranded items, estimate and mark dataSource as "estimated".
 
 Rules:
-1. Split complex items: "fried chicken burger" → chicken + bun + toppings separately
-2. For BRANDED items: Use exact amounts from nutrition database (e.g., "7-11 banana bread" = exact serving size from 7-11)
-3. For GENERIC items: Estimate reasonable amounts if not specified
-4. Include preparation method if mentioned or strongly inferred
-5. For small/common items (butter, condiments), use standard amounts
-6. Each item should be separate
+1. Each ingredient with a quantity = ONE separate item (e.g., "200g mince" = 1 item, "1 slice cheese" = 1 item)
+2. For BRANDED items: Use exact nutrition data (e.g., "Heinz ketchup sachet" = official Heinz data)
+3. For GENERIC items: Estimate if amounts not specified
+4. Include preparation method if mentioned (grilled, fried, boiled, raw, etc.)
+5. NO DUPLICATES - if the same food type appears multiple times in description, only create ONE item for it
+6. Be smart about context - "burger cheese" describes the cheese TYPE, not a burger
 
 Return ONLY this JSON (no other text):
 {
   "items": [
     {
-      "food": "chicken thigh",
-      "amount": 150,
+      "food": "beef mince patty",
+      "amount": 200,
       "unit": "g",
-      "preparation": "fried",
-      "calories": 293,
-      "protein": 36,
+      "preparation": "grilled",
+      "calories": 300,
+      "protein": 20,
       "carbs": 0,
-      "fats": 16.5,
+      "fats": 24,
       "dataSource": "estimated",
       "needsClarification": false,
       "clarificationOptions": []
@@ -97,22 +106,23 @@ Return ONLY this JSON (no other text):
   ]
 }
 
-Branded Examples:
-- "7-11 banana bread slice" → Search CalorieKing/MyFitnessPal for "7-11 banana bread", use exact macros, dataSource: "verified:CalorieKing"
-- "Coles cheapest bacon 3 rashers" → Search for "Coles bacon rashers", use exact macros per rasher
-- "McDonald's Big Mac" → Use official McDonald's Australia nutrition data
-- "Woolworths Greek yogurt" → Search Woolworths product database
+Examples:
+Branded:
+- "1 slice Coles American cheese" → Search for Coles American cheese slice, exact macros, dataSource: "verified:Coles"
+- "1 sachet Heinz ketchup" → Search Heinz ketchup sachet, exact macros, dataSource: "verified:Heinz"
+- "1tbsp Heinz garlic aioli" → Search Heinz garlic aioli, exact macros per tablespoon
 
-Generic Examples:
-- "banana bread slice toasted with butter" → banana bread slice (50g, toasted, estimated) + butter (10g, estimated)
-- "fried chicken burger" → chicken thigh (150g, fried, estimated) + brioche bun (60g, estimated)
-- "toast with butter" → bread slice (30g, toasted, estimated) + butter (10g, estimated)
+Context Awareness:
+- "200g 10% mince burger, burger cheese, burger bun" → THREE items: [mince patty 200g], [cheese slice], [bun] (NOT multiple burgers)
+- "3l water, 200g mince, 1 slice cheese" → THREE items: [water 3L], [mince 200g], [cheese 1 slice]
 
 CRITICAL:
 - Return valid JSON only
-- Break down all components
-- For branded products, search your training data for CalorieKing Australia and MyFitnessPal entries
-- Include accurate macros (calories, protein, carbs, fats) in the JSON
+- Each ingredient with amount = ONE item
+- NO duplicates of same food type
+- Understand context - "burger cheese" is not a burger
+- For branded products, search CalorieKing Australia and MyFitnessPal
+- Include accurate macros (calories, protein, carbs, fats) in JSON
 - Mark dataSource as "verified:[source]" or "estimated"`;
 }
 
@@ -137,6 +147,7 @@ Input: "${inputText}"
 Categories:
 - "water" - drinking water (1l water, 500ml, had water, etc)
 - "food" - eating meals/snacks (chicken rice, banana, breakfast, etc)
+- "caffeine" - coffee, tea, energy drinks (iced long black, latte, red bull, etc)
 - "cardio" - running/cycling (ran 5k, 30min run, etc)
 - "workout" - gym/strength training (bench press, squats, weights, etc)
 - "sleep" - sleep duration/quality (slept 7hrs, 8 hours sleep, etc)
@@ -216,6 +227,32 @@ Return ONLY this JSON (no other text):
 }
 
 Extract hours. Quality 1-10 if mentioned.`;
+}
+
+export function parseCaffeinePrompt(inputText) {
+  return `Parse caffeine intake into JSON.
+
+Input: "${inputText}"
+
+Common caffeine amounts:
+- Espresso shot (single) = 60mg
+- Long black (double shot) = 120mg
+- Flat white/Latte (single shot) = 60mg
+- Cappuccino (single shot) = 60mg
+- Black tea (cup) = 40mg
+- Green tea (cup) = 25mg
+- Energy drink (250ml can) = 80mg
+- Red Bull (250ml) = 80mg
+- Coke/Pepsi (375ml) = 40mg
+
+Return ONLY this JSON (no other text):
+{
+  "drink_type": "long black",
+  "quantity": 2,
+  "caffeine_mg": 240
+}
+
+Calculate total caffeine based on drink type and quantity.`;
 }
 
 export function estimateFoodMacros(foodItem) {
@@ -388,6 +425,8 @@ export default async function handler(req, res) {
           }
         } else if (category === 'steps') {
           parsePrompt = parseStepsPrompt(text);
+        } else if (category === 'caffeine') {
+          parsePrompt = parseCaffeinePrompt(text);
         } else if (category === 'cardio') {
           parsePrompt = parseCardioPrompt(text);
         } else if (category === 'workout') {
@@ -500,6 +539,7 @@ export default async function handler(req, res) {
       const groupedLogs = {
         water: [],
         food: [],
+        caffeine: [],
         cardio: [],
         workout: [],
         sleep: [],
