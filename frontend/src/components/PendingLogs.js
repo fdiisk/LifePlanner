@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import Modal from './Modal';
 
 function PendingLogs({ apiUrl, refreshTrigger }) {
   const [logs, setLogs] = useState({
@@ -13,6 +14,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
   const [loading, setLoading] = useState(true);
   const [compiling, setCompiling] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
   const fetchPendingLogs = useCallback(async () => {
     setLoading(true);
@@ -38,33 +40,63 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
   }, [selectedDate, refreshTrigger, fetchPendingLogs]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this entry?')) return;
-
-    try {
-      await axios.delete(`${apiUrl}/pending-log?id=${id}`);
-      fetchPendingLogs();
-    } catch (error) {
-      console.error('Error deleting log:', error);
-    }
+    setModalConfig({
+      isOpen: true,
+      title: 'Delete Entry',
+      message: 'Are you sure you want to delete this entry?',
+      confirmText: 'Delete',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await axios.delete(`${apiUrl}/pending-log?id=${id}`);
+          fetchPendingLogs();
+        } catch (error) {
+          console.error('Error deleting log:', error);
+        }
+      }
+    });
   };
 
-  const handleCompileDay = async () => {
-    if (!window.confirm('Compile all entries for this day? This will finalize them into your logs.')) return;
+  const handleCompileDay = () => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Compile Day',
+      message: 'Ready to finalize all entries for this day? This will save them to your permanent logs.',
+      confirmText: 'Compile Day',
+      type: 'confirm',
+      onConfirm: async () => {
+        setCompiling(true);
+        try {
+          const response = await axios.post(`${apiUrl}/compile-day`, {
+            date: selectedDate
+          });
 
-    setCompiling(true);
-    try {
-      const response = await axios.post(`${apiUrl}/compile-day`, {
-        date: selectedDate
-      });
+          setModalConfig({
+            isOpen: true,
+            title: 'Success!',
+            message: `${response.data.message}\n\nProcessed: ${response.data.totalLogs} entries`,
+            confirmText: 'OK',
+            onConfirm: () => {},
+            hideCancel: true
+          });
 
-      alert(response.data.message + `\n\nProcessed: ${response.data.totalLogs} entries`);
-      fetchPendingLogs(); // Refresh to show compiled logs are gone
-    } catch (error) {
-      console.error('Error compiling day:', error);
-      alert(error.response?.data?.error || 'Failed to compile day');
-    } finally {
-      setCompiling(false);
-    }
+          fetchPendingLogs();
+        } catch (error) {
+          console.error('Error compiling day:', error);
+          setModalConfig({
+            isOpen: true,
+            title: 'Error',
+            message: error.response?.data?.error || 'Failed to compile day',
+            confirmText: 'OK',
+            type: 'danger',
+            onConfirm: () => {},
+            hideCancel: true
+          });
+        } finally {
+          setCompiling(false);
+        }
+      }
+    });
   };
 
   const getCategoryIcon = (category) => {
@@ -203,6 +235,16 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
           </div>
         </>
       )}
+
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        type={modalConfig.type}
+      />
     </div>
   );
 }
