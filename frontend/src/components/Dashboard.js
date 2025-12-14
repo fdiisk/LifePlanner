@@ -112,6 +112,10 @@ function Dashboard({ apiUrl }) {
       confirmText: 'Delete',
       type: 'danger',
       onConfirm: async () => {
+        // Close modal immediately
+        setModalConfig({ isOpen: false });
+
+        // Delete in background
         try {
           await axios.delete(`${apiUrl}/pending-log?id=${id}`);
           fetchPendingLogs();

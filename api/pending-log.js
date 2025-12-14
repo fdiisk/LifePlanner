@@ -389,7 +389,7 @@ export default async function handler(req, res) {
         }
 
         // Calculate timestamp based on extracted time
-        let loggedAt = new Date();
+        let loggedAtTimestamp;
         if (time) {
           // Parse time like "11am", "2:30pm", etc
           const timeMatch = time.toLowerCase().match(/(\d+)(?::(\d+))?\s*(am|pm)?/);
@@ -401,19 +401,39 @@ export default async function handler(req, res) {
             if (ampm === 'pm' && hours !== 12) hours += 12;
             if (ampm === 'am' && hours === 12) hours = 0;
 
-            // Create date in local timezone using ISO string to avoid timezone issues
-            const [year, month, day] = date.split('-').map(Number);
-            loggedAt = new Date(year, month - 1, day, hours, minutes, 0, 0);
+            // Format as YYYY-MM-DD HH:MM:SS without timezone conversion
+            const paddedHours = String(hours).padStart(2, '0');
+            const paddedMinutes = String(minutes).padStart(2, '0');
+            loggedAtTimestamp = `${date} ${paddedHours}:${paddedMinutes}:00`;
 
-            // Log for debugging
-            console.log(`[TIME DEBUG] Input time: ${time}, Parsed: ${hours}:${minutes}, Created date: ${loggedAt.toISOString()}, Local: ${loggedAt.toString()}`);
+            console.log(`[TIME DEBUG] Input time: ${time}, Parsed: ${hours}:${minutes}, Timestamp: ${loggedAtTimestamp}`);
+          } else {
+            // No time match, use current time
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            loggedAtTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
           }
+        } else {
+          // No time specified, use current time
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          loggedAtTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         }
 
         // Insert into database with calculated timestamp
         const result = await sql`
           INSERT INTO pending_logs (date, category, raw_input, parsed_data, logged_at)
-          VALUES (${date}, ${category}, ${text}, ${parsedData ? JSON.stringify(parsedData) : null}, ${loggedAt.toISOString()})
+          VALUES (${date}, ${category}, ${text}, ${parsedData ? JSON.stringify(parsedData) : null}, ${loggedAtTimestamp})
           RETURNING *
         `;
 
