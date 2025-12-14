@@ -336,8 +336,9 @@ export default async function handler(req, res) {
             if (ampm === 'pm' && hours !== 12) hours += 12;
             if (ampm === 'am' && hours === 12) hours = 0;
 
-            loggedAt = new Date(date);
-            loggedAt.setHours(hours, minutes, 0, 0);
+            // Create date in local timezone
+            const [year, month, day] = date.split('-').map(Number);
+            loggedAt = new Date(year, month - 1, day, hours, minutes, 0, 0);
           }
         }
 

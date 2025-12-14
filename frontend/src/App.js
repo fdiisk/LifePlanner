@@ -3,13 +3,14 @@ import './App.css';
 import Login from './components/Login';
 import Track from './pages/Track';
 import Notes from './pages/Notes';
+import Dashboard from './components/Dashboard';
 import StatsDisplay from './components/StatsDisplay';
 
 const API_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://192.168.1.106:5001/api';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentPage, setCurrentPage] = useState('track');
+  const [currentPage, setCurrentPage] = useState('dashboard');
   const [stats, setStats] = useState({ gym: null, food: null });
 
   useEffect(() => {
@@ -60,19 +61,25 @@ function App() {
       <header className="App-header">
         <h1>Life Planner 1111</h1>
         <nav className="main-nav">
-          <button 
-            className={currentPage === 'track' ? 'active' : ''}
-            onClick={() => setCurrentPage('track')}
-          >
-            Track
-          </button>
-          <button 
+          <button
             className={currentPage === 'dashboard' ? 'active' : ''}
             onClick={() => setCurrentPage('dashboard')}
           >
             Dashboard
           </button>
-          <button 
+          <button
+            className={currentPage === 'track' ? 'active' : ''}
+            onClick={() => setCurrentPage('track')}
+          >
+            Track
+          </button>
+          <button
+            className={currentPage === 'stats' ? 'active' : ''}
+            onClick={() => setCurrentPage('stats')}
+          >
+            Stats
+          </button>
+          <button
             className={currentPage === 'notes' ? 'active' : ''}
             onClick={() => setCurrentPage('notes')}
           >
@@ -85,14 +92,17 @@ function App() {
       </header>
 
       <div className="container">
+        {currentPage === 'dashboard' && (
+          <Dashboard apiUrl={API_URL} />
+        )}
+
         {currentPage === 'track' && (
           <Track apiUrl={API_URL} />
         )}
 
-        {currentPage === 'dashboard' && (
+        {currentPage === 'stats' && (
           <>
-            <h2>Dashboard</h2>
-            <p>Coming soon: Goal progress, Wheel of Life, Weekly summary...</p>
+            <h2>Stats</h2>
             <StatsDisplay stats={stats} />
           </>
         )}
