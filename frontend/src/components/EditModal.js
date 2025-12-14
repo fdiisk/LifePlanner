@@ -5,7 +5,17 @@ function EditModal({ isOpen, onClose, onSave, entry, category }) {
 
   useEffect(() => {
     if (entry && entry.parsed_data) {
-      setEditedData(JSON.parse(JSON.stringify(entry.parsed_data)));
+      // Handle both string and object parsed_data
+      let data = entry.parsed_data;
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.error('Failed to parse entry.parsed_data:', e);
+          data = {};
+        }
+      }
+      setEditedData(JSON.parse(JSON.stringify(data)));
     }
   }, [entry]);
 

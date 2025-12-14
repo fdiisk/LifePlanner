@@ -190,6 +190,15 @@ function Dashboard({ apiUrl }) {
   };
 
   const formatTime = (timestamp) => {
+    // Parse timestamp string directly without timezone conversion
+    if (typeof timestamp === 'string' && timestamp.includes(' ')) {
+      const timePart = timestamp.split(' ')[1];
+      if (timePart) {
+        const [hours, minutes] = timePart.split(':');
+        return `${hours}:${minutes}`;
+      }
+    }
+    // Fallback to date parsing
     return new Date(timestamp).toLocaleTimeString('en-AU', {
       hour: '2-digit',
       minute: '2-digit'

@@ -485,10 +485,20 @@ export default async function handler(req, res) {
 
       logs.forEach(log => {
         if (groupedLogs[log.category]) {
+          // Ensure parsed_data is an object, not a string
+          let parsedData = log.parsed_data;
+          if (typeof parsedData === 'string') {
+            try {
+              parsedData = JSON.parse(parsedData);
+            } catch (e) {
+              console.error('Failed to parse parsed_data:', e);
+            }
+          }
+
           groupedLogs[log.category].push({
             id: log.id,
             raw_input: log.raw_input,
-            parsed_data: log.parsed_data,
+            parsed_data: parsedData,
             logged_at: log.logged_at
           });
         }
