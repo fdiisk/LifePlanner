@@ -282,7 +282,7 @@ export function estimateFoodMacros(foodItem) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
@@ -498,6 +498,34 @@ export default async function handler(req, res) {
 
     } catch (error) {
       console.error('Error fetching pending logs:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  // PUT - Update a pending log
+  if (req.method === 'PUT') {
+    const { id, parsed_data } = req.body;
+
+    if (!id || !parsed_data) {
+      return res.status(400).json({ error: 'Missing id or parsed_data' });
+    }
+
+    try {
+      const result = await sql`
+        UPDATE pending_logs
+        SET parsed_data = ${JSON.stringify(parsed_data)}
+        WHERE id = ${id}
+        RETURNING *
+      `;
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Log not found' });
+      }
+
+      return res.status(200).json({ success: true, log: result[0] });
+
+    } catch (error) {
+      console.error('Error updating pending log:', error);
       return res.status(500).json({ error: error.message });
     }
   }
