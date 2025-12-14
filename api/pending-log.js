@@ -144,6 +144,13 @@ export function splitItemsPrompt(inputText) {
 
 Input: "${inputText}"
 
+TIME EXTRACTION - CRITICAL:
+- Look for time patterns: "at 8am", "at 1pm", "11am", "2:30pm", etc.
+- Times can appear anywhere in the item description
+- If multiple items share a time pattern, extract for each: "one at 8am and one at 1pm" = TWO items with DIFFERENT times
+- "one at X" or "another at X" means create a separate item with that time
+- If no time mentioned for an item, set time to null
+
 Categories:
 - "water" - drinking water (1l water, 500ml, had water, etc)
 - "food" - eating meals/snacks (chicken rice, banana, breakfast, etc)
@@ -169,7 +176,21 @@ Return ONLY this JSON (no other text):
   ]
 }
 
-CRITICAL: Return valid JSON only. No explanations. Extract ALL items from the input.`;
+Examples:
+- "3L water, one iced long black at 8am and one at 1pm" → THREE items:
+  [{"category":"water", "text":"3L water", "time":null},
+   {"category":"caffeine", "text":"iced long black", "time":"8am"},
+   {"category":"caffeine", "text":"iced long black", "time":"1pm"}]
+
+- "1L water at 11am, 3k steps" → TWO items:
+  [{"category":"water", "text":"1L water", "time":"11am"},
+   {"category":"steps", "text":"3k steps", "time":null}]
+
+CRITICAL:
+- Return valid JSON only
+- Extract ALL items from input
+- Extract time for EACH item separately
+- "one at X and one at Y" = TWO separate items with different times`;
 }
 
 export function parseWaterPrompt(inputText) {
@@ -367,6 +388,15 @@ export default async function handler(req, res) {
       const splitData = JSON.parse(resultText);
       const items = splitData.items || [];
 
+      // LOG: Show what AI extracted
+      console.log(`\n========== SPLIT RESULT ==========`);
+      console.log(`Input: "${input}"`);
+      console.log(`AI extracted ${items.length} items:`);
+      items.forEach((item, idx) => {
+        console.log(`  [${idx}] Category: ${item.category}, Text: "${item.text}", Time: ${item.time || 'null'}`);
+      });
+      console.log(`==================================\n`);
+
       if (items.length === 0) {
         return res.status(400).json({ error: 'No items found in input' });
       }
@@ -376,6 +406,7 @@ export default async function handler(req, res) {
       // Process each item separately
       for (const item of items) {
         const { category, text, time } = item;
+        console.log(`\n[Processing] Category: ${category}, Text: "${text}", Time: ${time || 'none'}`);
         let parsedData = null;
         let parsePrompt = null;
 
@@ -453,6 +484,7 @@ export default async function handler(req, res) {
         // Calculate timestamp based on extracted time
         let loggedAtTimestamp;
         if (time) {
+          console.log(`[TIMESTAMP] Time extracted from AI: "${time}"`);
           // Parse time like "11am", "2:30pm", etc
           const timeMatch = time.toLowerCase().match(/(\d+)(?::(\d+))?\s*(am|pm)?/);
           if (timeMatch) {
@@ -460,17 +492,22 @@ export default async function handler(req, res) {
             const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
             const ampm = timeMatch[3];
 
+            console.log(`[TIMESTAMP] Regex match: hours=${hours}, minutes=${minutes}, ampm=${ampm}`);
+
             if (ampm === 'pm' && hours !== 12) hours += 12;
             if (ampm === 'am' && hours === 12) hours = 0;
+
+            console.log(`[TIMESTAMP] After am/pm conversion: hours=${hours}`);
 
             // Format as YYYY-MM-DD HH:MM:SS without timezone conversion
             const paddedHours = String(hours).padStart(2, '0');
             const paddedMinutes = String(minutes).padStart(2, '0');
             loggedAtTimestamp = `${date} ${paddedHours}:${paddedMinutes}:00`;
 
-            console.log(`[TIME DEBUG] Input time: ${time}, Parsed: ${hours}:${minutes}, Timestamp: ${loggedAtTimestamp}`);
+            console.log(`[TIMESTAMP] Final timestamp: ${loggedAtTimestamp}`);
           } else {
             // No time match, use current time
+            console.log(`[TIMESTAMP] WARNING: Time "${time}" did not match regex pattern! Using current time.`);
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -479,9 +516,11 @@ export default async function handler(req, res) {
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
             loggedAtTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            console.log(`[TIMESTAMP] Current time used: ${loggedAtTimestamp}`);
           }
         } else {
           // No time specified, use current time
+          console.log(`[TIMESTAMP] No time extracted by AI. Using current time.`);
           const now = new Date();
           const year = now.getFullYear();
           const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -490,6 +529,7 @@ export default async function handler(req, res) {
           const minutes = String(now.getMinutes()).padStart(2, '0');
           const seconds = String(now.getSeconds()).padStart(2, '0');
           loggedAtTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+          console.log(`[TIMESTAMP] Current time used: ${loggedAtTimestamp}`);
         }
 
         // Insert into database with calculated timestamp
