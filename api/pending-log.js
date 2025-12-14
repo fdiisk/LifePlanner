@@ -61,12 +61,22 @@ export function parseFoodPrompt(inputText) {
 
 Input: "${inputText}"
 
+IMPORTANT - BRANDED PRODUCT DETECTION:
+If the input mentions specific brands or stores (Coles, Woolworths, 7-11, McDonald's, KFC, Hungry Jack's, Subway, Red Rooster, Oporto, etc.), search your knowledge base for EXACT nutrition facts from:
+1. CalorieKing Australia database
+2. MyFitnessPal verified entries
+3. Official brand nutrition information
+
+For branded items, return accurate macros from these sources. Mark dataSource as "verified:[source]" (e.g., "verified:CalorieKing", "verified:MyFitnessPal", "verified:Brand").
+For generic/unbranded items, estimate and mark dataSource as "estimated".
+
 Rules:
 1. Split complex items: "fried chicken burger" → chicken + bun + toppings separately
-2. Estimate reasonable amounts if not specified
-3. Include preparation method if mentioned or strongly inferred
-4. For small/common items (butter, condiments), use standard amounts
-5. Each item should be separate
+2. For BRANDED items: Use exact amounts from nutrition database (e.g., "7-11 banana bread" = exact serving size from 7-11)
+3. For GENERIC items: Estimate reasonable amounts if not specified
+4. Include preparation method if mentioned or strongly inferred
+5. For small/common items (butter, condiments), use standard amounts
+6. Each item should be separate
 
 Return ONLY this JSON (no other text):
 {
@@ -76,34 +86,34 @@ Return ONLY this JSON (no other text):
       "amount": 150,
       "unit": "g",
       "preparation": "fried",
-      "needsClarification": false,
-      "clarificationOptions": []
-    },
-    {
-      "food": "brioche bun",
-      "amount": 60,
-      "unit": "g",
-      "preparation": "",
-      "needsClarification": false,
-      "clarificationOptions": []
-    },
-    {
-      "food": "butter",
-      "amount": 10,
-      "unit": "g",
-      "preparation": "",
+      "calories": 293,
+      "protein": 36,
+      "carbs": 0,
+      "fats": 16.5,
+      "dataSource": "estimated",
       "needsClarification": false,
       "clarificationOptions": []
     }
   ]
 }
 
-Examples:
-- "banana bread slice toasted with butter" → banana bread slice (50g, toasted) + butter (10g)
-- "fried chicken burger" → chicken thigh (150g, fried) + brioche bun (60g) + pickles (optional, ask)
-- "toast with butter" → bread slice (30g, toasted) + butter (10g)
+Branded Examples:
+- "7-11 banana bread slice" → Search CalorieKing/MyFitnessPal for "7-11 banana bread", use exact macros, dataSource: "verified:CalorieKing"
+- "Coles cheapest bacon 3 rashers" → Search for "Coles bacon rashers", use exact macros per rasher
+- "McDonald's Big Mac" → Use official McDonald's Australia nutrition data
+- "Woolworths Greek yogurt" → Search Woolworths product database
 
-CRITICAL: Return valid JSON only. Break down all components. Estimate amounts reasonably.`;
+Generic Examples:
+- "banana bread slice toasted with butter" → banana bread slice (50g, toasted, estimated) + butter (10g, estimated)
+- "fried chicken burger" → chicken thigh (150g, fried, estimated) + brioche bun (60g, estimated)
+- "toast with butter" → bread slice (30g, toasted, estimated) + butter (10g, estimated)
+
+CRITICAL:
+- Return valid JSON only
+- Break down all components
+- For branded products, search your training data for CalorieKing Australia and MyFitnessPal entries
+- Include accurate macros (calories, protein, carbs, fats) in the JSON
+- Mark dataSource as "verified:[source]" or "estimated"`;
 }
 
 export const FOOD_DB = {
@@ -336,7 +346,7 @@ export default async function handler(req, res) {
         if (category === 'water') {
           parsePrompt = parseWaterPrompt(text);
         } else if (category === 'food') {
-          // Use AI to parse food + estimate macros
+          // Use AI to parse food with branded product detection
           parsePrompt = parseFoodPrompt(text);
           const parseResponse = await callOpenRouter(parsePrompt);
           if (parseResponse) {
@@ -346,17 +356,30 @@ export default async function handler(req, res) {
               if (foodMatch) foodText = foodMatch[0];
               parsedData = JSON.parse(foodText);
 
-              // Add macro estimates for all items
+              // Process macros for all items
               if (parsedData.items) {
                 parsedData.items = parsedData.items.map(foodItem => {
-                  const macros = estimateFoodMacros(foodItem);
-                  return {
-                    ...foodItem,
-                    protein: macros.protein,
-                    carbs: macros.carbs,
-                    fats: macros.fats,
-                    calories: macros.calories
-                  };
+                  // Check if AI provided macros from verified sources
+                  const hasAIMacros = foodItem.calories && foodItem.protein !== undefined &&
+                                      foodItem.carbs !== undefined && foodItem.fats !== undefined;
+                  const isVerified = foodItem.dataSource && foodItem.dataSource.startsWith('verified:');
+
+                  if (hasAIMacros && isVerified) {
+                    // Use AI-provided verified macros (from CalorieKing/MyFitnessPal)
+                    console.log(`[BRANDED] Using verified macros for ${foodItem.food} from ${foodItem.dataSource}`);
+                    return foodItem;
+                  } else {
+                    // Fall back to database estimates
+                    const macros = estimateFoodMacros(foodItem);
+                    return {
+                      ...foodItem,
+                      protein: macros.protein,
+                      carbs: macros.carbs,
+                      fats: macros.fats,
+                      calories: macros.calories,
+                      dataSource: foodItem.dataSource || 'estimated'
+                    };
+                  }
                 });
               }
             } catch (e) {

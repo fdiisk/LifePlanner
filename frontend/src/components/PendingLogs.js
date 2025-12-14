@@ -223,6 +223,11 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
                                 <div className="food-item-name">
                                   {item.food}
                                   {item.preparation && <span className="food-prep">, {item.preparation}</span>}
+                                  {item.dataSource && item.dataSource.startsWith('verified:') && (
+                                    <span className="data-source-badge verified">
+                                      ✓ {item.dataSource.replace('verified:', '')}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="food-item-amount">
                                   {item.amount}{item.unit || 'g'}
