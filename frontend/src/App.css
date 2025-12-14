@@ -1016,3 +1016,27 @@ body {
 .edit-modal-content::-webkit-scrollbar-thumb:hover {
   background: rgba(34, 197, 94, 0.5);
 }
+
+/* Data Source Badges */
+.data-source-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-source-badge.verified {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.data-source-badge.estimated {
+  background: rgba(156, 163, 175, 0.15);
+  color: #6b7280;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
