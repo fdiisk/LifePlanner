@@ -135,18 +135,22 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
   };
 
   const formatTime = (timestamp) => {
-    // Parse timestamp string directly without timezone conversion
+    // Parse UTC timestamp and convert to Australian local time
+    // Backend now stores timestamps in UTC, so we need to convert to local
     if (typeof timestamp === 'string' && timestamp.includes(' ')) {
-      const timePart = timestamp.split(' ')[1];
-      if (timePart) {
-        const [hours, minutes] = timePart.split(':');
-        return `${hours}:${minutes}`;
-      }
+      // Parse as UTC: "2025-12-14 02:00:00" → UTC Date object
+      const utcDate = new Date(timestamp + 'Z'); // Adding 'Z' marks it as UTC
+      return utcDate.toLocaleTimeString('en-AU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Australia/Sydney'
+      });
     }
-    // Fallback to date parsing
+    // Fallback for other formats
     return new Date(timestamp).toLocaleTimeString('en-AU', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Australia/Sydney'
     });
   };
 
