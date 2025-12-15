@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { FileText, Save, X, Edit, CheckCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 
 const STORAGE_KEY = 'lifeplanner_dev_notes';
 
 const initialContent = {
   phase1: {
-    title: '✅ Phase 1 (Backend)',
+    title: 'Phase 1 (Backend)',
     status: 'completed',
     items: [
       'Database tables created',
@@ -15,7 +16,7 @@ const initialContent = {
     ]
   },
   phase2: {
-    title: '✅ Phase 2 (Deployment)',
+    title: 'Phase 2 (Deployment)',
     status: 'completed',
     items: [
       'Build compiles successfully',
@@ -25,7 +26,7 @@ const initialContent = {
     ]
   },
   phase3: {
-    title: '🚧 Phase 3 (Frontend - TODO)',
+    title: 'Phase 3 (Frontend - TODO)',
     status: 'in-progress',
     items: [
       'Implement LifeDashboard 3-tier layout',
@@ -36,7 +37,7 @@ const initialContent = {
     ]
   },
   phase4: {
-    title: '🔄 Phase 4 (Micro-Enhancements & Iterations - In Progress/TODO)',
+    title: 'Phase 4 (Micro-Enhancements & Iterations - In Progress/TODO)',
     status: 'in-progress',
     items: [
       { text: 'Integrate weight tracking module (input, logging, and storage)', checked: false, notes: '', date: '' },
@@ -213,19 +214,21 @@ function DevelopmentNotes() {
     return (
       <div className="development-notes">
         <div className="dev-notes-header">
-          <h2>📝 Development Notes</h2>
+          <h2><FileText size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Development Notes</h2>
           <div className="dev-notes-actions">
             <button className="btn-save" onClick={handleToggleEditMode}>
-              💾 Save Changes
+              <Save size={16} />
+              Save Changes
             </button>
             <button className="btn-cancel" onClick={() => setEditMode(false)}>
-              ✖ Cancel
+              <X size={16} />
+              Cancel
             </button>
           </div>
         </div>
 
         <div className="edit-mode-info">
-          <p>✏️ <strong>Edit Mode Active</strong></p>
+          <p><Edit size={16} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} /><strong>Edit Mode Active</strong></p>
           <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '8px' }}>
             Edit the markdown below. Use <code>[ ]</code> for unchecked and <code>[x]</code> for checked items in Phase 4.
           </p>
@@ -246,10 +249,11 @@ function DevelopmentNotes() {
   return (
     <div className="development-notes">
       <div className="dev-notes-header">
-        <h2>📝 Development Notes</h2>
+        <h2><FileText size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Development Notes</h2>
         <div className="dev-notes-actions">
           <button className="btn-edit-mode" onClick={handleToggleEditMode}>
-            ✏️ Edit Mode
+            <Edit size={16} />
+            Edit Mode
           </button>
         </div>
       </div>
@@ -274,10 +278,14 @@ function DevelopmentNotes() {
             className="phase-header"
             onClick={() => handleTogglePhase(key)}
           >
-            <span className="phase-toggle">
-              {expandedPhases[key] ? '▼' : '▶'}
+            <div className="phase-title">
+              {expandedPhases[key] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+              {phase.status === 'completed' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+              <span>{phase.title}</span>
+            </div>
+            <span className={`phase-status ${phase.status}`}>
+              {phase.status === 'completed' ? 'Completed' : 'In Progress'}
             </span>
-            <h3>{phase.title}</h3>
           </div>
 
           {expandedPhases[key] && (
@@ -299,9 +307,9 @@ function DevelopmentNotes() {
                       {(item.notes || item.date) && (
                         <button
                           className="btn-expand-task"
-                          onClick={() => handleToggleTask(index)}
+                          onClick={(e) => { e.stopPropagation(); handleToggleTask(index); }}
                         >
-                          {expandedTasks[index] ? '▲' : '▼'}
+                          {expandedTasks[index] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </button>
                       )}
                     </div>
