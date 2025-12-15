@@ -157,3 +157,14 @@ CREATE TABLE IF NOT EXISTS daily_summary (
   notes TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- User settings for daily nutrition targets
+CREATE TABLE IF NOT EXISTS user_settings (
+  id SERIAL PRIMARY KEY,
+  daily_calories_target INTEGER DEFAULT 2000,
+  daily_protein_target INTEGER DEFAULT 150,
+  daily_carbs_target INTEGER DEFAULT 200,
+  daily_fats_target INTEGER DEFAULT 65,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);

@@ -487,7 +487,86 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: 'Invalid resource. Use: categories, goals, habits, or tracking' });
+  // ===================
+  // SETTINGS
+  // ===================
+  if (resource === 'settings') {
+    if (req.method === 'GET') {
+      try {
+        const settings = await sql`SELECT * FROM user_settings LIMIT 1`;
+
+        if (settings.length === 0) {
+          // Return defaults if no settings exist
+          return res.status(200).json({
+            settings: {
+              daily_calories_target: 2000,
+              daily_protein_target: 150,
+              daily_carbs_target: 200,
+              daily_fats_target: 65
+            }
+          });
+        }
+
+        return res.status(200).json({ settings: settings[0] });
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+        return res.status(500).json({ error: 'Failed to fetch settings' });
+      }
+    }
+
+    if (req.method === 'PUT') {
+      try {
+        const {
+          daily_calories_target,
+          daily_protein_target,
+          daily_carbs_target,
+          daily_fats_target
+        } = req.body;
+
+        // Check if settings exist
+        const existing = await sql`SELECT id FROM user_settings LIMIT 1`;
+
+        if (existing.length === 0) {
+          // Insert new settings
+          const result = await sql`
+            INSERT INTO user_settings (
+              daily_calories_target,
+              daily_protein_target,
+              daily_carbs_target,
+              daily_fats_target
+            )
+            VALUES (
+              ${daily_calories_target || 2000},
+              ${daily_protein_target || 150},
+              ${daily_carbs_target || 200},
+              ${daily_fats_target || 65}
+            )
+            RETURNING *
+          `;
+          return res.status(200).json({ success: true, settings: result[0] });
+        } else {
+          // Update existing settings
+          const result = await sql`
+            UPDATE user_settings
+            SET
+              daily_calories_target = ${daily_calories_target},
+              daily_protein_target = ${daily_protein_target},
+              daily_carbs_target = ${daily_carbs_target},
+              daily_fats_target = ${daily_fats_target},
+              updated_at = NOW()
+            WHERE id = ${existing[0].id}
+            RETURNING *
+          `;
+          return res.status(200).json({ success: true, settings: result[0] });
+        }
+      } catch (error) {
+        console.error('Error updating settings:', error);
+        return res.status(500).json({ error: 'Failed to update settings' });
+      }
+    }
+  }
+
+  return res.status(400).json({ error: 'Invalid resource. Use: categories, goals, habits, tracking, or settings' });
 }
 
 // Helper function to build hierarchical goal structure
