@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 function EditModal({ isOpen, onClose, onSave, entry, category }) {
   const [editedData, setEditedData] = useState(null);
+  const [originalAmounts, setOriginalAmounts] = useState([]);
 
   useEffect(() => {
     if (entry && entry.parsed_data) {
@@ -15,7 +16,19 @@ function EditModal({ isOpen, onClose, onSave, entry, category }) {
           data = {};
         }
       }
-      setEditedData(JSON.parse(JSON.stringify(data)));
+      const clonedData = JSON.parse(JSON.stringify(data));
+      setEditedData(clonedData);
+
+      // Store original amounts for recalculation
+      if (clonedData.items) {
+        setOriginalAmounts(clonedData.items.map(item => ({
+          amount: item.amount,
+          calories: item.calories,
+          protein: item.protein,
+          carbs: item.carbs,
+          fats: item.fats
+        })));
+      }
     }
   }, [entry]);
 
@@ -53,8 +66,24 @@ function EditModal({ isOpen, onClose, onSave, entry, category }) {
                   type="number"
                   value={item.amount || ''}
                   onChange={(e) => {
+                    const newAmount = parseFloat(e.target.value);
                     const newItems = [...editedData.items];
-                    newItems[index].amount = parseFloat(e.target.value);
+
+                    // Recalculate macros proportionally if original data exists
+                    if (originalAmounts[index] && originalAmounts[index].amount > 0) {
+                      const ratio = newAmount / originalAmounts[index].amount;
+                      newItems[index] = {
+                        ...newItems[index],
+                        amount: newAmount,
+                        calories: Math.round(originalAmounts[index].calories * ratio),
+                        protein: Math.round(originalAmounts[index].protein * ratio * 10) / 10,
+                        carbs: Math.round(originalAmounts[index].carbs * ratio * 10) / 10,
+                        fats: Math.round(originalAmounts[index].fats * ratio * 10) / 10
+                      };
+                    } else {
+                      newItems[index].amount = newAmount;
+                    }
+
                     setEditedData({ ...editedData, items: newItems });
                   }}
                 />
