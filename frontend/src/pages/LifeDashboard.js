@@ -8,18 +8,46 @@ function LifeDashboard({ apiUrl }) {
   const [settings, setSettings] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
+  const extractNutritionTargets = (goals) => {
+    // Extract nutrition targets from daily goals
+    const targets = {};
+    const flattenGoals = (goalsList) => {
+      goalsList.forEach(goal => {
+        if (goal.goal_type === 'daily' && goal.target_value) {
+          const title = goal.title.toLowerCase();
+          if (title.includes('calorie')) {
+            targets.daily_calories_target = parseInt(goal.target_value);
+          } else if (title.includes('protein')) {
+            targets.daily_protein_target = parseInt(goal.target_value);
+          } else if (title.includes('carb')) {
+            targets.daily_carbs_target = parseInt(goal.target_value);
+          } else if (title.includes('fat')) {
+            targets.daily_fats_target = parseInt(goal.target_value);
+          }
+        }
+        if (goal.children && goal.children.length > 0) {
+          flattenGoals(goal.children);
+        }
+      });
+    };
+    flattenGoals(goals);
+    return Object.keys(targets).length > 0 ? targets : null;
+  };
+
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch pending logs, compiled stats, and settings in parallel
-      const [pendingRes, foodRes, settingsRes] = await Promise.all([
+      // Fetch pending logs, compiled stats, goals, and settings in parallel
+      const [pendingRes, foodRes, goalsRes, settingsRes] = await Promise.all([
         fetch(`${apiUrl}/pending-log?date=${selectedDate}`),
         fetch(`${apiUrl}/food-stats?date=${selectedDate}`),
+        fetch(`${apiUrl}/life-tracking?resource=goals`),
         fetch(`${apiUrl}/life-tracking?resource=settings`)
       ]);
 
       const pendingData = await pendingRes.json();
       const foodData = await foodRes.json();
+      const goalsData = await goalsRes.json();
       const settingsData = await settingsRes.json();
 
       // Flatten the grouped logs into a single array
@@ -36,7 +64,10 @@ function LifeDashboard({ apiUrl }) {
       }
       setPendingLogs(allLogs);
       setCompiledStats(foodData);
-      setSettings(settingsData.settings);
+
+      // Extract nutrition targets from goals (priority) or use settings (fallback)
+      const goalTargets = extractNutritionTargets(goalsData.goals || []);
+      setSettings(goalTargets || settingsData.settings);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     }
@@ -216,6 +247,11 @@ function LifeDashboard({ apiUrl }) {
             </>
           ) : (
             <>
+              <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '0.25rem', marginBottom: '12px' }}>
+                <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
+                  Set nutrition goals in Goals Setup to track progress
+                </p>
+              </div>
               <div className="stat-item">
                 <span className="stat-label">Calories</span>
                 <span className="stat-value">{Math.round(displayData.calories)}</span>
