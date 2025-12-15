@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { Droplets, Utensils, Coffee, Activity, Dumbbell, Moon, Footprints, FileText } from 'lucide-react';
 import Modal from './Modal';
 import EditModal from './EditModal';
 
@@ -221,16 +222,19 @@ function Dashboard({ apiUrl }) {
   };
 
   const getCategoryIcon = (category) => {
+    const iconSize = 16;
+    const iconStyle = { display: 'inline', verticalAlign: 'middle', marginRight: '4px' };
+
     const icons = {
-      water: '💧',
-      food: '🍽️',
-      caffeine: '☕',
-      cardio: '🏃',
-      workout: '💪',
-      sleep: '😴',
-      steps: '👟'
+      water: <Droplets size={iconSize} style={iconStyle} />,
+      food: <Utensils size={iconSize} style={iconStyle} />,
+      caffeine: <Coffee size={iconSize} style={iconStyle} />,
+      cardio: <Activity size={iconSize} style={iconStyle} />,
+      workout: <Dumbbell size={iconSize} style={iconStyle} />,
+      sleep: <Moon size={iconSize} style={iconStyle} />,
+      steps: <Footprints size={iconSize} style={iconStyle} />
     };
-    return icons[category] || '📝';
+    return icons[category] || <FileText size={iconSize} style={iconStyle} />;
   };
 
   const hasLogs = Object.values(logs).some(arr => arr.length > 0);
