@@ -13,7 +13,20 @@ function LifeDashboard({ apiUrl }) {
       // Fetch pending logs
       const pendingRes = await fetch(`${apiUrl}/pending-log?date=${selectedDate}`);
       const pendingData = await pendingRes.json();
-      setPendingLogs(pendingData.logs || []);
+
+      // Flatten the grouped logs into a single array
+      const allLogs = [];
+      if (pendingData.logs) {
+        Object.entries(pendingData.logs).forEach(([category, logs]) => {
+          logs.forEach(log => {
+            allLogs.push({
+              ...log,
+              category: category
+            });
+          });
+        });
+      }
+      setPendingLogs(allLogs);
 
       // Fetch compiled food stats
       const foodRes = await fetch(`${apiUrl}/food-stats?date=${selectedDate}`);
