@@ -3,7 +3,10 @@ import './App.css';
 import Login from './components/Login';
 import Track from './pages/Track';
 import Notes from './pages/Notes';
-import Dashboard from './components/Dashboard';
+import LifeDashboard from './pages/LifeDashboard';
+import Tracking from './pages/Tracking';
+import GoalsSetup from './pages/GoalsSetup';
+import Settings from './pages/Settings';
 import StatsDisplay from './components/StatsDisplay';
 import SavedMeals from './components/SavedMeals';
 import axios from 'axios';
@@ -84,37 +87,37 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Life Planner 1111</h1>
+        <h1>🎯 Life Tracker</h1>
         <nav className="main-nav">
           <button
             className={currentPage === 'dashboard' ? 'active' : ''}
             onClick={() => setCurrentPage('dashboard')}
           >
-            Dashboard
+            📊 Dashboard
           </button>
           <button
-            className={currentPage === 'track' ? 'active' : ''}
-            onClick={() => setCurrentPage('track')}
+            className={currentPage === 'tracking' ? 'active' : ''}
+            onClick={() => setCurrentPage('tracking')}
           >
-            Track
+            ✅ Tracking
           </button>
           <button
-            className={currentPage === 'stats' ? 'active' : ''}
-            onClick={() => setCurrentPage('stats')}
+            className={currentPage === 'goals' ? 'active' : ''}
+            onClick={() => setCurrentPage('goals')}
           >
-            Stats
+            🎯 Goals Setup
           </button>
           <button
             className={currentPage === 'meals' ? 'active' : ''}
             onClick={() => setCurrentPage('meals')}
           >
-            Meals
+            🍽️ Meals
           </button>
           <button
-            className={currentPage === 'notes' ? 'active' : ''}
-            onClick={() => setCurrentPage('notes')}
+            className={currentPage === 'settings' ? 'active' : ''}
+            onClick={() => setCurrentPage('settings')}
           >
-            Notes
+            ⚙️ Settings
           </button>
           <button onClick={handleLogout}>
             Logout
@@ -124,9 +127,26 @@ function App() {
 
       <div className="container">
         {currentPage === 'dashboard' && (
-          <Dashboard apiUrl={API_URL} />
+          <LifeDashboard apiUrl={API_URL} />
         )}
 
+        {currentPage === 'tracking' && (
+          <Tracking apiUrl={API_URL} onLoadMeal={handleLoadMeal} />
+        )}
+
+        {currentPage === 'goals' && (
+          <GoalsSetup apiUrl={API_URL} />
+        )}
+
+        {currentPage === 'meals' && (
+          <SavedMeals apiUrl={API_URL} onLoadMeal={handleLoadMeal} />
+        )}
+
+        {currentPage === 'settings' && (
+          <Settings apiUrl={API_URL} />
+        )}
+
+        {/* Legacy pages - keeping for reference */}
         {currentPage === 'track' && (
           <Track apiUrl={API_URL} />
         )}
@@ -136,10 +156,6 @@ function App() {
             <h2>Stats</h2>
             <StatsDisplay stats={stats} />
           </>
-        )}
-
-        {currentPage === 'meals' && (
-          <SavedMeals apiUrl={API_URL} onLoadMeal={handleLoadMeal} />
         )}
 
         {currentPage === 'notes' && (
