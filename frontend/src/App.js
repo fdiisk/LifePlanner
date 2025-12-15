@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { Target, LayoutDashboard, CheckSquare, Crosshair, Utensils, Settings as SettingsIcon, FileText, LogOut } from 'lucide-react';
 import Login from './components/Login';
 import Track from './pages/Track';
 import Notes from './pages/Notes';
@@ -88,45 +89,52 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>🎯 Life Tracker</h1>
+        <h1><Target size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Life Tracker</h1>
         <nav className="main-nav">
           <button
             className={currentPage === 'dashboard' ? 'active' : ''}
             onClick={() => setCurrentPage('dashboard')}
           >
-            📊 Dashboard
+            <LayoutDashboard size={16} />
+            Dashboard
           </button>
           <button
             className={currentPage === 'tracking' ? 'active' : ''}
             onClick={() => setCurrentPage('tracking')}
           >
-            ✅ Tracking
+            <CheckSquare size={16} />
+            Tracking
           </button>
           <button
             className={currentPage === 'goals' ? 'active' : ''}
             onClick={() => setCurrentPage('goals')}
           >
-            🎯 Goals Setup
+            <Crosshair size={16} />
+            Goals Setup
           </button>
           <button
             className={currentPage === 'meals' ? 'active' : ''}
             onClick={() => setCurrentPage('meals')}
           >
-            🍽️ Meals
+            <Utensils size={16} />
+            Meals
           </button>
           <button
             className={currentPage === 'settings' ? 'active' : ''}
             onClick={() => setCurrentPage('settings')}
           >
-            ⚙️ Settings
+            <SettingsIcon size={16} />
+            Settings
           </button>
           <button
             className={currentPage === 'devnotes' ? 'active' : ''}
             onClick={() => setCurrentPage('devnotes')}
           >
-            📝 Dev Notes
+            <FileText size={16} />
+            Dev Notes
           </button>
           <button onClick={handleLogout}>
+            <LogOut size={16} />
             Logout
           </button>
         </nav>
