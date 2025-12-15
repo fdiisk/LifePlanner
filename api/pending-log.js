@@ -499,37 +499,50 @@ export default async function handler(req, res) {
 
             console.log(`[TIMESTAMP] After am/pm conversion: hours=${hours}`);
 
-            // Format as YYYY-MM-DD HH:MM:SS without timezone conversion
+            // Create date object in Australian timezone (UTC+11 for AEDT)
+            // Then convert to UTC for storage to avoid timezone issues
             const paddedHours = String(hours).padStart(2, '0');
             const paddedMinutes = String(minutes).padStart(2, '0');
-            loggedAtTimestamp = `${date} ${paddedHours}:${paddedMinutes}:00`;
 
-            console.log(`[TIMESTAMP] Final timestamp: ${loggedAtTimestamp}`);
+            // Create date with Australian timezone offset (+11:00 for AEDT)
+            const australianDateTime = new Date(`${date}T${paddedHours}:${paddedMinutes}:00+11:00`);
+
+            // Extract UTC components for storage
+            const utcYear = australianDateTime.getUTCFullYear();
+            const utcMonth = String(australianDateTime.getUTCMonth() + 1).padStart(2, '0');
+            const utcDay = String(australianDateTime.getUTCDate()).padStart(2, '0');
+            const utcHours = String(australianDateTime.getUTCHours()).padStart(2, '0');
+            const utcMinutes = String(australianDateTime.getUTCMinutes()).padStart(2, '0');
+
+            loggedAtTimestamp = `${utcYear}-${utcMonth}-${utcDay} ${utcHours}:${utcMinutes}:00`;
+
+            console.log(`[TIMESTAMP] Australian time: ${paddedHours}:${paddedMinutes} → UTC: ${utcHours}:${utcMinutes}`);
+            console.log(`[TIMESTAMP] Final timestamp (UTC): ${loggedAtTimestamp}`);
           } else {
-            // No time match, use current time
+            // No time match, use current time (already in UTC from server)
             console.log(`[TIMESTAMP] WARNING: Time "${time}" did not match regex pattern! Using current time.`);
             const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const year = now.getUTCFullYear();
+            const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(now.getUTCDate()).padStart(2, '0');
+            const hours = String(now.getUTCHours()).padStart(2, '0');
+            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
             loggedAtTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-            console.log(`[TIMESTAMP] Current time used: ${loggedAtTimestamp}`);
+            console.log(`[TIMESTAMP] Current time (UTC) used: ${loggedAtTimestamp}`);
           }
         } else {
-          // No time specified, use current time
+          // No time specified, use current time (already in UTC from server)
           console.log(`[TIMESTAMP] No time extracted by AI. Using current time.`);
           const now = new Date();
-          const year = now.getFullYear();
-          const month = String(now.getMonth() + 1).padStart(2, '0');
-          const day = String(now.getDate()).padStart(2, '0');
-          const hours = String(now.getHours()).padStart(2, '0');
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const seconds = String(now.getSeconds()).padStart(2, '0');
+          const year = now.getUTCFullYear();
+          const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(now.getUTCDate()).padStart(2, '0');
+          const hours = String(now.getUTCHours()).padStart(2, '0');
+          const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+          const seconds = String(now.getUTCSeconds()).padStart(2, '0');
           loggedAtTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-          console.log(`[TIMESTAMP] Current time used: ${loggedAtTimestamp}`);
+          console.log(`[TIMESTAMP] Current time (UTC) used: ${loggedAtTimestamp}`);
         }
 
         // Insert into database with calculated timestamp
