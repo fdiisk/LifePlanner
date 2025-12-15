@@ -8,7 +8,13 @@ function GoalsSetup({ apiUrl }) {
   const [expandedGoals, setExpandedGoals] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
-  const [showTemplates, setShowTemplates] = useState(false);
+  const [showNutritionSetup, setShowNutritionSetup] = useState(false);
+  const [nutritionTargets, setNutritionTargets] = useState({
+    calories: '2000',
+    protein: '150',
+    carbs: '200',
+    fats: '65'
+  });
   const [formData, setFormData] = useState({
     category_id: '',
     parent_id: null,
@@ -152,56 +158,71 @@ function GoalsSetup({ apiUrl }) {
     });
   };
 
-  const applyTemplate = (template) => {
-    // Find or create Health category
-    let healthCategory = categories.find(cat => cat.name.toLowerCase() === 'health');
+  const handleCreateNutritionGoals = async (e) => {
+    e.preventDefault();
 
-    setFormData({
-      category_id: healthCategory ? healthCategory.id : '',
-      parent_id: null,
-      title: template.title,
-      description: template.description,
-      goal_type: template.goal_type,
-      timeframe_start: '',
-      timeframe_end: '',
-      target_value: template.target_value,
-      target_unit: template.target_unit,
-      is_smart: true
-    });
-    setShowTemplates(false);
-    setShowAddModal(true);
-  };
-
-  const nutritionTemplates = [
-    {
-      title: 'Daily Calorie Target',
-      description: 'Track daily calorie intake to meet nutritional goals',
-      goal_type: 'daily',
-      target_value: '2000',
-      target_unit: 'cal'
-    },
-    {
-      title: 'Daily Protein Target',
-      description: 'Meet daily protein intake for muscle maintenance and growth',
-      goal_type: 'daily',
-      target_value: '150',
-      target_unit: 'g'
-    },
-    {
-      title: 'Daily Carbs Target',
-      description: 'Maintain optimal carbohydrate intake for energy',
-      goal_type: 'daily',
-      target_value: '200',
-      target_unit: 'g'
-    },
-    {
-      title: 'Daily Fats Target',
-      description: 'Ensure adequate healthy fat intake',
-      goal_type: 'daily',
-      target_value: '65',
-      target_unit: 'g'
+    const healthCategory = categories.find(cat => cat.name.toLowerCase() === 'health');
+    if (!healthCategory) {
+      alert('Health category not found. Please refresh the page.');
+      return;
     }
-  ];
+
+    const nutritionGoals = [
+      {
+        category_id: healthCategory.id,
+        title: 'Daily Calorie Target',
+        description: 'Track daily calorie intake to meet nutritional goals',
+        goal_type: 'daily',
+        target_value: nutritionTargets.calories,
+        target_unit: 'cal',
+        is_smart: true
+      },
+      {
+        category_id: healthCategory.id,
+        title: 'Daily Protein Target',
+        description: 'Meet daily protein intake for muscle maintenance and growth',
+        goal_type: 'daily',
+        target_value: nutritionTargets.protein,
+        target_unit: 'g',
+        is_smart: true
+      },
+      {
+        category_id: healthCategory.id,
+        title: 'Daily Carbs Target',
+        description: 'Maintain optimal carbohydrate intake for energy',
+        goal_type: 'daily',
+        target_value: nutritionTargets.carbs,
+        target_unit: 'g',
+        is_smart: true
+      },
+      {
+        category_id: healthCategory.id,
+        title: 'Daily Fats Target',
+        description: 'Ensure adequate healthy fat intake',
+        goal_type: 'daily',
+        target_value: nutritionTargets.fats,
+        target_unit: 'g',
+        is_smart: true
+      }
+    ];
+
+    try {
+      // Create all nutrition goals
+      for (const goal of nutritionGoals) {
+        await fetch(`${apiUrl}/life-tracking?resource=goals`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(goal)
+        });
+      }
+
+      setShowNutritionSetup(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error creating nutrition goals:', error);
+      alert('Failed to create nutrition goals. Please try again.');
+    }
+  };
 
   const openEditModal = (goal) => {
     setEditingGoal(goal);
@@ -307,8 +328,8 @@ function GoalsSetup({ apiUrl }) {
       <div className="goals-header">
         <h2><Crosshair size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Goals Setup</h2>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn-secondary" style={{ width: 'auto' }} onClick={() => setShowTemplates(true)}>
-            <Zap size={16} /> Quick Start
+          <button className="btn-secondary" style={{ width: 'auto' }} onClick={() => setShowNutritionSetup(true)}>
+            <Activity size={16} /> Set Nutrition Goals
           </button>
           <button className="btn-primary" style={{ width: 'auto' }} onClick={() => setShowAddModal(true)}>
             <Plus size={16} /> Add Goal
@@ -319,7 +340,7 @@ function GoalsSetup({ apiUrl }) {
       {goals.length === 0 ? (
         <div className="empty-state">
           <Crosshair size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
-          <p>No goals yet. Use Quick Start to add nutrition goals or create a custom goal!</p>
+          <p>No goals yet. Set your nutrition goals or create a custom goal!</p>
         </div>
       ) : (
         <div className="goals-tree">
@@ -327,56 +348,94 @@ function GoalsSetup({ apiUrl }) {
         </div>
       )}
 
-      {showTemplates && (
-        <div className="modal-overlay" onClick={() => setShowTemplates(false)}>
-          <div className="modal-content" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
-            <h3><Zap size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Quick Start Templates</h3>
-            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
-              Click a template to quickly set up common health and nutrition goals
+      {showNutritionSetup && (
+        <div className="modal-overlay" onClick={() => setShowNutritionSetup(false)}>
+          <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
+            <h3><Activity size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Set Your Daily Nutrition Targets</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
+              Enter your specific macro targets. These will be tracked on your dashboard.
             </p>
 
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity size={18} style={{ color: '#0066ff' }} />
-                Nutrition Goals
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {nutritionTemplates.map((template, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => applyTemplate(template)}
-                    style={{
-                      padding: '16px',
-                      background: '#f9fafb',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#f3f4f6';
-                      e.currentTarget.style.borderColor = '#0066ff';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#f9fafb';
-                      e.currentTarget.style.borderColor = '#e5e7eb';
-                    }}
-                  >
-                    <div style={{ fontWeight: 500, marginBottom: '4px' }}>{template.title}</div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>{template.description}</div>
-                    <div style={{ fontSize: '12px', color: '#0066ff', fontWeight: 500 }}>
-                      Target: {template.target_value}{template.target_unit} {template.goal_type}
-                    </div>
-                  </div>
-                ))}
+            <form onSubmit={handleCreateNutritionGoals}>
+              <div className="form-group">
+                <label>Daily Calorie Target</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="number"
+                    value={nutritionTargets.calories}
+                    onChange={(e) => setNutritionTargets({ ...nutritionTargets, calories: e.target.value })}
+                    min="0"
+                    step="50"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>cal</span>
+                </div>
               </div>
-            </div>
 
-            <div className="modal-actions">
-              <button type="button" className="btn-secondary" onClick={() => setShowTemplates(false)}>
-                Close
-              </button>
-            </div>
+              <div className="form-group">
+                <label>Daily Protein Target</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="number"
+                    value={nutritionTargets.protein}
+                    onChange={(e) => setNutritionTargets({ ...nutritionTargets, protein: e.target.value })}
+                    min="0"
+                    step="5"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>grams</span>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Daily Carbs Target</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="number"
+                    value={nutritionTargets.carbs}
+                    onChange={(e) => setNutritionTargets({ ...nutritionTargets, carbs: e.target.value })}
+                    min="0"
+                    step="5"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>grams</span>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Daily Fats Target</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="number"
+                    value={nutritionTargets.fats}
+                    onChange={(e) => setNutritionTargets({ ...nutritionTargets, fats: e.target.value })}
+                    min="0"
+                    step="5"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>grams</span>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '24px', padding: '12px', background: '#f0f9ff', borderRadius: '0.25rem', border: '1px solid #bfdbfe' }}>
+                <p style={{ fontSize: '13px', color: '#1e40af', margin: 0 }}>
+                  <strong>Note:</strong> This will create 4 daily goals that you can edit or delete individually later.
+                </p>
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '20px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowNutritionSetup(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" style={{ width: 'auto' }}>
+                  <Activity size={16} /> Create All Goals
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
