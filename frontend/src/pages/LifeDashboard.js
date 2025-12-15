@@ -41,6 +41,11 @@ function LifeDashboard({ apiUrl }) {
       sleepHours: 0
     };
 
+    // Safety check: ensure pendingLogs is an array
+    if (!Array.isArray(pendingLogs)) {
+      return totals;
+    }
+
     pendingLogs.forEach(log => {
       let parsedData = log.parsed_data;
       if (typeof parsedData === 'string') {
