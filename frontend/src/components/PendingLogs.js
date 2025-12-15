@@ -234,11 +234,12 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
         </div>
       ) : (
         <>
-          {Object.entries(logs).map(([category, entries]) => {
-            if (entries.length === 0) return null;
+          <div className="pending-categories-grid">
+            {Object.entries(logs).map(([category, entries]) => {
+              if (entries.length === 0) return null;
 
-            return (
-              <div key={category} className="pending-category">
+              return (
+                <div key={category} className="pending-category">
                 <h3>
                   {getCategoryIcon(category)} {category.charAt(0).toUpperCase() + category.slice(1)}
                 </h3>
@@ -254,7 +255,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
                             onClick={() => handleSaveAsMeal(entry)}
                             title="Save as meal"
                           >
-                            💾
+                            Save
                           </button>
                         )}
                         <button
@@ -336,6 +337,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
               </div>
             );
           })}
+          </div>
 
           <div className="pending-actions">
             <button className="btn-primary" onClick={handleCompileDay} disabled={compiling}>

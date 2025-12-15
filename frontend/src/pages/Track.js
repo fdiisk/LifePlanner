@@ -11,14 +11,12 @@ function Track({ apiUrl }) {
 
   return (
     <div className="track-page">
-      <h1>Daily Tracker</h1>
-      
-      <QuickLog 
-        apiUrl={apiUrl} 
+      <QuickLog
+        apiUrl={apiUrl}
         onLogAdded={handleLogAdded}
       />
 
-      <PendingLogs 
+      <PendingLogs
         apiUrl={apiUrl}
         refreshTrigger={refreshTrigger}
       />
