@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle } from 'lucide-react';
+import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity, Zap } from 'lucide-react';
 
 function GoalsSetup({ apiUrl }) {
   const [goals, setGoals] = useState([]);
@@ -8,6 +8,7 @@ function GoalsSetup({ apiUrl }) {
   const [expandedGoals, setExpandedGoals] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [formData, setFormData] = useState({
     category_id: '',
     parent_id: null,
@@ -21,9 +22,38 @@ function GoalsSetup({ apiUrl }) {
     is_smart: false
   });
 
+  const ensureHealthCategory = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/life-tracking?resource=categories`);
+      const data = await response.json();
+      const categories = data.categories || [];
+
+      const healthCategory = categories.find(cat => cat.name.toLowerCase() === 'health');
+
+      if (!healthCategory) {
+        // Create Health category
+        await fetch(`${apiUrl}/life-tracking?resource=categories`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'Health',
+            icon: 'activity',
+            color: '#0066ff',
+            display_order: 0
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Error ensuring health category:', error);
+    }
+  }, [apiUrl]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // Ensure Health category exists
+      await ensureHealthCategory();
+
       const [categoriesRes, goalsRes] = await Promise.all([
         fetch(`${apiUrl}/life-tracking?resource=categories`),
         fetch(`${apiUrl}/life-tracking?resource=goals`)
@@ -38,7 +68,7 @@ function GoalsSetup({ apiUrl }) {
       console.error('Error fetching goals data:', error);
     }
     setLoading(false);
-  }, [apiUrl]);
+  }, [apiUrl, ensureHealthCategory]);
 
   useEffect(() => {
     fetchData();
@@ -121,6 +151,57 @@ function GoalsSetup({ apiUrl }) {
       is_smart: false
     });
   };
+
+  const applyTemplate = (template) => {
+    // Find or create Health category
+    let healthCategory = categories.find(cat => cat.name.toLowerCase() === 'health');
+
+    setFormData({
+      category_id: healthCategory ? healthCategory.id : '',
+      parent_id: null,
+      title: template.title,
+      description: template.description,
+      goal_type: template.goal_type,
+      timeframe_start: '',
+      timeframe_end: '',
+      target_value: template.target_value,
+      target_unit: template.target_unit,
+      is_smart: true
+    });
+    setShowTemplates(false);
+    setShowAddModal(true);
+  };
+
+  const nutritionTemplates = [
+    {
+      title: 'Daily Calorie Target',
+      description: 'Track daily calorie intake to meet nutritional goals',
+      goal_type: 'daily',
+      target_value: '2000',
+      target_unit: 'cal'
+    },
+    {
+      title: 'Daily Protein Target',
+      description: 'Meet daily protein intake for muscle maintenance and growth',
+      goal_type: 'daily',
+      target_value: '150',
+      target_unit: 'g'
+    },
+    {
+      title: 'Daily Carbs Target',
+      description: 'Maintain optimal carbohydrate intake for energy',
+      goal_type: 'daily',
+      target_value: '200',
+      target_unit: 'g'
+    },
+    {
+      title: 'Daily Fats Target',
+      description: 'Ensure adequate healthy fat intake',
+      goal_type: 'daily',
+      target_value: '65',
+      target_unit: 'g'
+    }
+  ];
 
   const openEditModal = (goal) => {
     setEditingGoal(goal);
@@ -225,15 +306,20 @@ function GoalsSetup({ apiUrl }) {
     <div className="goals-setup">
       <div className="goals-header">
         <h2><Crosshair size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Goals Setup</h2>
-        <button className="btn-primary" style={{ width: 'auto' }} onClick={() => setShowAddModal(true)}>
-          <Plus size={16} /> Add Goal
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn-secondary" style={{ width: 'auto' }} onClick={() => setShowTemplates(true)}>
+            <Zap size={16} /> Quick Start
+          </button>
+          <button className="btn-primary" style={{ width: 'auto' }} onClick={() => setShowAddModal(true)}>
+            <Plus size={16} /> Add Goal
+          </button>
+        </div>
       </div>
 
       {goals.length === 0 ? (
         <div className="empty-state">
           <Crosshair size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
-          <p>No goals yet. Create your first goal to get started!</p>
+          <p>No goals yet. Use Quick Start to add nutrition goals or create a custom goal!</p>
         </div>
       ) : (
         <div className="goals-tree">
@@ -241,10 +327,67 @@ function GoalsSetup({ apiUrl }) {
         </div>
       )}
 
+      {showTemplates && (
+        <div className="modal-overlay" onClick={() => setShowTemplates(false)}>
+          <div className="modal-content" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
+            <h3><Zap size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Quick Start Templates</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
+              Click a template to quickly set up common health and nutrition goals
+            </p>
+
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Activity size={18} style={{ color: '#0066ff' }} />
+                Nutrition Goals
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {nutritionTemplates.map((template, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => applyTemplate(template)}
+                    style={{
+                      padding: '16px',
+                      background: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.25rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#f3f4f6';
+                      e.currentTarget.style.borderColor = '#0066ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f9fafb';
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                    }}
+                  >
+                    <div style={{ fontWeight: 500, marginBottom: '4px' }}>{template.title}</div>
+                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>{template.description}</div>
+                    <div style={{ fontSize: '12px', color: '#0066ff', fontWeight: 500 }}>
+                      Target: {template.target_value}{template.target_unit} {template.goal_type}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowTemplates(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {(showAddModal || editingGoal) && (
         <div className="modal-overlay" onClick={() => { setShowAddModal(false); setEditingGoal(null); resetForm(); }}>
           <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <h3>{editingGoal ? 'Edit Goal' : 'Add New Goal'}</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
+              {editingGoal ? 'Update your goal details below' : 'Create a new goal to track progress'}
+            </p>
 
             <form onSubmit={editingGoal ? handleUpdateGoal : handleAddGoal} className="goal-form">
               <div className="form-group">
@@ -319,23 +462,29 @@ function GoalsSetup({ apiUrl }) {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Target Value (optional)</label>
+                  <label>Target Value</label>
                   <input
                     type="number"
-                    step="0.1"
+                    step="any"
                     value={formData.target_value}
                     onChange={(e) => setFormData({ ...formData, target_value: e.target.value })}
-                    placeholder="e.g., 2"
+                    placeholder="e.g., 2000 (for calories), 150 (for protein)"
                   />
+                  <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    For nutrition: calories, protein/carbs/fats in grams
+                  </small>
                 </div>
                 <div className="form-group">
-                  <label>Target Unit (optional)</label>
+                  <label>Target Unit</label>
                   <input
                     type="text"
                     value={formData.target_unit}
                     onChange={(e) => setFormData({ ...formData, target_unit: e.target.value })}
-                    placeholder="e.g., kg"
+                    placeholder="e.g., cal, g, kg"
                   />
+                  <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    Common: cal (calories), g (grams), kg, ml
+                  </small>
                 </div>
               </div>
 
