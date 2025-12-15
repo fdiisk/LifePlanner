@@ -70,7 +70,7 @@ function SaveMealModal({ isOpen, onClose, onSave, ingredients }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal save-meal-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>💾 Save Meal</h3>
+          <h3>Save Meal</h3>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 

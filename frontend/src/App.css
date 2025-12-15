@@ -19,6 +19,27 @@ body {
   letter-spacing: 0.01em;
 }
 
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 10px 0;
+}
+
 .App {
   min-height: 100vh;
   display: flex;
@@ -92,18 +113,17 @@ body {
 
 /* Container - more compact */
 .container {
-  max-width: 1600px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 16px 20px;
+  padding: 16px;
   flex: 1;
 }
 
-/* Track Page */
-.track-page h1 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #1f2937;
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1600px;
+    padding: 16px 20px;
+  }
 }
 
 /* Quick Log */
@@ -201,11 +221,19 @@ body {
   color: #9ca3af;
 }
 
-.pending-category {
-  margin-bottom: 16px;
+.pending-categories-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
 
-.pending-category:last-child {
+@media (min-width: 1024px) {
+  .pending-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.pending-category {
   margin-bottom: 0;
 }
 
@@ -256,39 +284,41 @@ body {
 }
 
 .btn-edit {
-  padding: 6px 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.25rem;
-  color: #3b82f6;
+  color: #6b7280;
   font-size: 12px;
   font-weight: 500;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-edit:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #1f2937;
 }
 
 .btn-delete {
-  padding: 6px 12px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.25rem;
-  color: #f87171;
+  color: #6b7280;
   font-size: 12px;
   font-weight: 500;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-delete:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }
 
 .pending-item-content {
@@ -364,32 +394,29 @@ body {
 /* Buttons */
 .btn-primary {
   width: 100%;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+  padding: 10px 16px;
+  background: #0066ff;
   border: none;
   border-radius: 0.25rem;
   color: #ffffff;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.2);
+  transition: all 0.15s;
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(0, 102, 255, 0.3);
+  background: #0052cc;
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  background: #0047b3;
 }
 
 .btn-primary:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -765,40 +792,38 @@ body {
 }
 
 .btn-secondary {
-  padding: 10px 20px;
+  padding: 8px 14px;
   background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.25rem;
   color: #1f2937;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-secondary:hover {
   background: rgba(0, 0, 0, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .btn-danger {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  padding: 8px 14px;
+  background: #ef4444;
   border: none;
   border-radius: 0.25rem;
   color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+  transition: all 0.15s;
 }
 
 .btn-danger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(239, 68, 68, 0.4);
+  background: #dc2626;
 }
 
 /* Dashboard */
@@ -1213,34 +1238,36 @@ body {
 
 .btn-load {
   flex: 1;
-  padding: 10px;
-  background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+  padding: 8px 12px;
+  background: #0066ff;
   border: none;
   border-radius: 0.25rem;
   color: white;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-load:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 102, 255, 0.3);
+  background: #0052cc;
 }
 
 .btn-delete-meal {
-  padding: 10px 14px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.25rem;
-  font-size: 16px;
+  font-size: 14px;
+  color: #6b7280;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-delete-meal:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }
 
 /* Save Meal Modal */
@@ -1317,35 +1344,39 @@ body {
 }
 
 .btn-use-auto {
-  padding: 8px 12px;
-  background: rgba(0, 102, 255, 0.1);
-  border: 1px solid rgba(0, 102, 255, 0.3);
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.25rem;
-  color: #0066ff;
+  color: #6b7280;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-use-auto:hover {
-  background: rgba(0, 102, 255, 0.2);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #1f2937;
 }
 
 /* Save Meal Button in Pending Logs */
 .btn-save-meal {
-  padding: 6px 10px;
-  background: rgba(0, 102, 255, 0.1);
-  border: 1px solid rgba(0, 102, 255, 0.3);
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.25rem;
-  font-size: 16px;
+  font-size: 14px;
+  color: #6b7280;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-save-meal:hover {
-  background: rgba(0, 102, 255, 0.2);
-  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #1f2937;
 }
 
 /* Development Notes */
@@ -1377,49 +1408,50 @@ body {
 .btn-edit-mode,
 .btn-save,
 .btn-cancel {
-  padding: 8px 16px;
+  padding: 7px 12px;
   border-radius: 0.25rem;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .btn-edit-mode {
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #3b82f6;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #6b7280;
 }
 
 .btn-edit-mode:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.4);
-}
-
-.btn-save {
-  background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
-  border: none;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.2);
-}
-
-.btn-save:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
-}
-
-.btn-cancel {
   background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.15);
   color: #1f2937;
 }
 
+.btn-save {
+  background: #0066ff;
+  border: none;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #0052cc;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #6b7280;
+}
+
 .btn-cancel:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #1f2937;
 }
 
 .dev-notes-progress {
@@ -1812,8 +1844,8 @@ body {
 }
 
 .btn-icon {
-  padding: 6px;
-  background: rgba(0, 0, 0, 0.04);
+  padding: 5px;
+  background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.25rem;
   cursor: pointer;
@@ -1821,18 +1853,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .btn-icon:hover {
-  background: rgba(0, 102, 255, 0.1);
-  border-color: rgba(0, 102, 255, 0.3);
-  color: #0066ff;
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #1f2937;
 }
 
 .btn-icon-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
   color: #ef4444;
 }
 
