@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity, Zap } from 'lucide-react';
+import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity } from 'lucide-react';
 
 function GoalsSetup({ apiUrl }) {
   const [goals, setGoals] = useState([]);
