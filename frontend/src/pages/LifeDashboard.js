@@ -5,14 +5,22 @@ function LifeDashboard({ apiUrl }) {
   const [loading, setLoading] = useState(true);
   const [pendingLogs, setPendingLogs] = useState([]);
   const [compiledStats, setCompiledStats] = useState(null);
+  const [settings, setSettings] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch pending logs
-      const pendingRes = await fetch(`${apiUrl}/pending-log?date=${selectedDate}`);
+      // Fetch pending logs, compiled stats, and settings in parallel
+      const [pendingRes, foodRes, settingsRes] = await Promise.all([
+        fetch(`${apiUrl}/pending-log?date=${selectedDate}`),
+        fetch(`${apiUrl}/food-stats?date=${selectedDate}`),
+        fetch(`${apiUrl}/life-tracking?resource=settings`)
+      ]);
+
       const pendingData = await pendingRes.json();
+      const foodData = await foodRes.json();
+      const settingsData = await settingsRes.json();
 
       // Flatten the grouped logs into a single array
       const allLogs = [];
@@ -27,11 +35,8 @@ function LifeDashboard({ apiUrl }) {
         });
       }
       setPendingLogs(allLogs);
-
-      // Fetch compiled food stats
-      const foodRes = await fetch(`${apiUrl}/food-stats?date=${selectedDate}`);
-      const foodData = await foodRes.json();
       setCompiledStats(foodData);
+      setSettings(settingsData.settings);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     }
@@ -117,6 +122,47 @@ function LifeDashboard({ apiUrl }) {
     setSelectedDate(date.toISOString().split('T')[0]);
   };
 
+  const renderProgressBar = (label, current, target, unit = '') => {
+    if (!target) return null;
+
+    const percentage = (current / target) * 100;
+    const difference = current - target;
+    const isOver = difference > 0;
+    const isClose = Math.abs(difference) <= target * 0.05; // Within 5%
+
+    return (
+      <div className="stat-item" style={{ display: 'block' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span className="stat-label">{label}</span>
+          <span className="stat-value">
+            {Math.round(current)}/{target}{unit}
+            <span style={{
+              marginLeft: '8px',
+              fontSize: '12px',
+              color: isClose ? '#10b981' : isOver ? '#ff8c00' : '#6b7280'
+            }}>
+              ({isOver ? '+' : ''}{Math.round(difference)}{unit})
+            </span>
+          </span>
+        </div>
+        <div style={{
+          width: '100%',
+          height: '6px',
+          background: '#e5e7eb',
+          borderRadius: '3px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            width: `${Math.min(percentage, 100)}%`,
+            height: '100%',
+            background: isClose ? '#10b981' : percentage > 100 ? '#ff8c00' : '#0066ff',
+            transition: 'width 0.3s ease'
+          }} />
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="life-dashboard">
@@ -161,22 +207,33 @@ function LifeDashboard({ apiUrl }) {
       <div className="stats-display">
         <div className="stat-card">
           <h3><Activity size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Nutrition</h3>
-          <div className="stat-item">
-            <span className="stat-label">Calories</span>
-            <span className="stat-value">{Math.round(displayData.calories)}</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Protein</span>
-            <span className="stat-value">{Math.round(displayData.protein)}g</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Carbs</span>
-            <span className="stat-value">{Math.round(displayData.carbs)}g</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Fats</span>
-            <span className="stat-value">{Math.round(displayData.fats)}g</span>
-          </div>
+          {settings ? (
+            <>
+              {renderProgressBar('Calories', displayData.calories, settings.daily_calories_target)}
+              {renderProgressBar('Protein', displayData.protein, settings.daily_protein_target, 'g')}
+              {renderProgressBar('Carbs', displayData.carbs, settings.daily_carbs_target, 'g')}
+              {renderProgressBar('Fats', displayData.fats, settings.daily_fats_target, 'g')}
+            </>
+          ) : (
+            <>
+              <div className="stat-item">
+                <span className="stat-label">Calories</span>
+                <span className="stat-value">{Math.round(displayData.calories)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Protein</span>
+                <span className="stat-value">{Math.round(displayData.protein)}g</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Carbs</span>
+                <span className="stat-value">{Math.round(displayData.carbs)}g</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Fats</span>
+                <span className="stat-value">{Math.round(displayData.fats)}g</span>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="stat-card">
