@@ -8,6 +8,8 @@ function GoalsSetup({ apiUrl }) {
   const [expandedGoals, setExpandedGoals] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [groupGoals, setGroupGoals] = useState([]);
   const [showNutritionSetup, setShowNutritionSetup] = useState(false);
   const [nutritionTargets, setNutritionTargets] = useState({
     calories: '2000',
@@ -270,76 +272,167 @@ function GoalsSetup({ apiUrl }) {
     });
   };
 
-  const renderGoalTree = (goalsList, level = 0) => {
-    return goalsList.map(goal => (
-      <div key={goal.id} style={{ marginLeft: `${level * 24}px` }}>
-        <div className="goal-item">
-          <div className="goal-main">
-            <button
-              className="goal-toggle"
-              onClick={() => toggleGoal(goal.id)}
-              style={{ visibility: goal.children && goal.children.length > 0 ? 'visible' : 'hidden' }}
-            >
-              {expandedGoals[goal.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </button>
+  const openGroupEditModal = async (groupId) => {
+    try {
+      // Fetch all goals in this group
+      const response = await fetch(`${apiUrl}/life-tracking?resource=goals`);
+      const data = await response.json();
 
-            <div className="goal-content">
-              <div className="goal-header-row">
-                <Target size={16} style={{ color: '#0066ff', flexShrink: 0 }} />
-                <span className="goal-title">{goal.title}</span>
-                <span className="goal-type-badge">{goal.goal_type.replace('_', ' ')}</span>
+      // Flatten goals and filter by group_id
+      const allGoals = [];
+      const flattenGoals = (goalsList) => {
+        goalsList.forEach(goal => {
+          allGoals.push(goal);
+          if (goal.children) {
+            flattenGoals(goal.children);
+          }
+        });
+      };
+      flattenGoals(data.goals || []);
+
+      const goalsInGroup = allGoals.filter(g => g.group_id === groupId);
+
+      if (goalsInGroup.length > 0) {
+        setEditingGroup({ id: groupId, name: goalsInGroup[0].group_name || 'Nutrition Macros' });
+        setGroupGoals(goalsInGroup.map(g => ({
+          id: g.id,
+          title: g.title,
+          target_value: g.target_value || '',
+          target_unit: g.target_unit || ''
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching group goals:', error);
+    }
+  };
+
+  const handleUpdateGroupGoals = async (e) => {
+    e.preventDefault();
+
+    try {
+      // Update each goal in the group
+      for (const goal of groupGoals) {
+        await fetch(`${apiUrl}/life-tracking?resource=goals&id=${goal.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target_value: goal.target_value
+          })
+        });
+      }
+
+      setEditingGroup(null);
+      setGroupGoals([]);
+      fetchData();
+    } catch (error) {
+      console.error('Error updating group goals:', error);
+      alert('Failed to update goals. Please try again.');
+    }
+  };
+
+  const renderGoalTree = (goalsList, level = 0, renderedGroups = new Set()) => {
+    return goalsList.map(goal => {
+      const isGrouped = goal.group_id != null;
+      const isFirstInGroup = isGrouped && !renderedGroups.has(goal.group_id);
+
+      if (isFirstInGroup) {
+        renderedGroups.add(goal.group_id);
+      }
+
+      return (
+        <div key={goal.id} style={{ marginLeft: `${level * 24}px` }}>
+          <div className="goal-item">
+            <div className="goal-main">
+              <button
+                className="goal-toggle"
+                onClick={() => toggleGoal(goal.id)}
+                style={{ visibility: goal.children && goal.children.length > 0 ? 'visible' : 'hidden' }}
+              >
+                {expandedGoals[goal.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+
+              <div className="goal-content">
+                <div className="goal-header-row">
+                  <Target size={16} style={{ color: '#0066ff', flexShrink: 0 }} />
+                  <span className="goal-title">{goal.title}</span>
+                  <span className="goal-type-badge">{goal.goal_type.replace('_', ' ')}</span>
+                  {isGrouped && (
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '2px 6px',
+                      background: '#e0f2fe',
+                      color: '#0369a1',
+                      borderRadius: '0.25rem',
+                      marginLeft: '6px'
+                    }}>
+                      Grouped
+                    </span>
+                  )}
+                </div>
+
+                {goal.description && (
+                  <p className="goal-description">{goal.description}</p>
+                )}
+
+                <div className="goal-meta">
+                  {goal.category_name && (
+                    <span className="goal-meta-item">{goal.category_name}</span>
+                  )}
+                  {goal.timeframe_end && (
+                    <span className="goal-meta-item">
+                      <Calendar size={12} /> Due: {new Date(goal.timeframe_end).toLocaleDateString()}
+                    </span>
+                  )}
+                  {goal.target_value && (
+                    <span className="goal-meta-item">
+                      Target: {goal.target_value}{goal.target_unit}
+                    </span>
+                  )}
+                  {goal.is_smart && (
+                    <span className="goal-meta-item smart-badge">
+                      <CheckCircle size={12} /> SMART
+                    </span>
+                  )}
+                </div>
+
+                {isFirstInGroup && (
+                  <div style={{ marginTop: '8px' }}>
+                    <button
+                      className="btn-secondary"
+                      style={{ width: 'auto', fontSize: '12px', padding: '4px 12px' }}
+                      onClick={() => openGroupEditModal(goal.group_id)}
+                    >
+                      <Edit size={12} /> Edit All Macros
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {goal.description && (
-                <p className="goal-description">{goal.description}</p>
-              )}
-
-              <div className="goal-meta">
-                {goal.category_name && (
-                  <span className="goal-meta-item">{goal.category_name}</span>
-                )}
-                {goal.timeframe_end && (
-                  <span className="goal-meta-item">
-                    <Calendar size={12} /> Due: {new Date(goal.timeframe_end).toLocaleDateString()}
-                  </span>
-                )}
-                {goal.target_value && (
-                  <span className="goal-meta-item">
-                    Target: {goal.target_value}{goal.target_unit}
-                  </span>
-                )}
-                {goal.is_smart && (
-                  <span className="goal-meta-item smart-badge">
-                    <CheckCircle size={12} /> SMART
-                  </span>
-                )}
+              <div className="goal-actions">
+                <button className="btn-icon" onClick={() => openEditModal(goal)} title="Edit">
+                  <Edit size={14} />
+                </button>
+                <button className="btn-icon" onClick={() => {
+                  setFormData({ ...formData, parent_id: goal.id, category_id: goal.category_id });
+                  setShowAddModal(true);
+                }} title="Add child goal">
+                  <Plus size={14} />
+                </button>
+                <button className="btn-icon btn-icon-danger" onClick={() => handleDeleteGoal(goal.id)} title="Delete">
+                  <Trash2 size={14} />
+                </button>
               </div>
-            </div>
-
-            <div className="goal-actions">
-              <button className="btn-icon" onClick={() => openEditModal(goal)} title="Edit">
-                <Edit size={14} />
-              </button>
-              <button className="btn-icon" onClick={() => {
-                setFormData({ ...formData, parent_id: goal.id, category_id: goal.category_id });
-                setShowAddModal(true);
-              }} title="Add child goal">
-                <Plus size={14} />
-              </button>
-              <button className="btn-icon btn-icon-danger" onClick={() => handleDeleteGoal(goal.id)} title="Delete">
-                <Trash2 size={14} />
-              </button>
             </div>
           </div>
+
+          {expandedGoals[goal.id] && goal.children && goal.children.length > 0 && (
+            <div className="goal-children">
+              {renderGoalTree(goal.children, level + 1, renderedGroups)}
+            </div>
+          )}
         </div>
-
-        {expandedGoals[goal.id] && goal.children && goal.children.length > 0 && (
-          <div className="goal-children">
-            {renderGoalTree(goal.children, level + 1)}
-          </div>
-        )}
-      </div>
-    ));
+      );
+    });
   };
 
   if (loading) {
@@ -463,6 +556,52 @@ function GoalsSetup({ apiUrl }) {
                 </button>
                 <button type="submit" className="btn-primary" style={{ width: 'auto' }}>
                   <Activity size={16} /> Create All Goals
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingGroup && (
+        <div className="modal-overlay" onClick={() => { setEditingGroup(null); setGroupGoals([]); }}>
+          <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
+            <h3><Activity size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Edit All Nutrition Macros</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
+              Update all your daily macro targets at once. Changes will be reflected on your dashboard.
+            </p>
+
+            <form onSubmit={handleUpdateGroupGoals}>
+              {groupGoals.map((goal, index) => (
+                <div key={goal.id} className="form-group">
+                  <label>{goal.title.replace('Daily ', '').replace(' Target', '')}</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="number"
+                      value={goal.target_value}
+                      onChange={(e) => {
+                        const updated = [...groupGoals];
+                        updated[index].target_value = e.target.value;
+                        setGroupGoals(updated);
+                      }}
+                      min="0"
+                      step={goal.target_unit === 'cal' ? '50' : '5'}
+                      required
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '60px' }}>
+                      {goal.target_unit === 'cal' ? 'calories' : 'grams'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              <div className="modal-actions" style={{ marginTop: '20px' }}>
+                <button type="button" className="btn-secondary" onClick={() => { setEditingGroup(null); setGroupGoals([]); }}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" style={{ width: 'auto' }}>
+                  <Activity size={16} /> Update All Goals
                 </button>
               </div>
             </form>
