@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
 
@@ -8,7 +8,7 @@ function SavedMeals({ apiUrl, onLoadMeal }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
-  const fetchSavedMeals = async () => {
+  const fetchSavedMeals = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${apiUrl}/saved-meals`);
@@ -18,11 +18,11 @@ function SavedMeals({ apiUrl, onLoadMeal }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiUrl]);
 
   useEffect(() => {
     fetchSavedMeals();
-  }, [apiUrl]);
+  }, [fetchSavedMeals]);
 
   const handleLoadMeal = async (meal, multiplier = 1) => {
     try {
