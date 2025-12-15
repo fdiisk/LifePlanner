@@ -167,47 +167,77 @@ function GoalsSetup({ apiUrl }) {
       return;
     }
 
-    const nutritionGoals = [
-      {
-        category_id: healthCategory.id,
-        title: 'Daily Calorie Target',
-        description: 'Track daily calorie intake to meet nutritional goals',
-        goal_type: 'daily',
-        target_value: nutritionTargets.calories,
-        target_unit: 'cal',
-        is_smart: true
-      },
-      {
-        category_id: healthCategory.id,
-        title: 'Daily Protein Target',
-        description: 'Meet daily protein intake for muscle maintenance and growth',
-        goal_type: 'daily',
-        target_value: nutritionTargets.protein,
-        target_unit: 'g',
-        is_smart: true
-      },
-      {
-        category_id: healthCategory.id,
-        title: 'Daily Carbs Target',
-        description: 'Maintain optimal carbohydrate intake for energy',
-        goal_type: 'daily',
-        target_value: nutritionTargets.carbs,
-        target_unit: 'g',
-        is_smart: true
-      },
-      {
-        category_id: healthCategory.id,
-        title: 'Daily Fats Target',
-        description: 'Ensure adequate healthy fat intake',
-        goal_type: 'daily',
-        target_value: nutritionTargets.fats,
-        target_unit: 'g',
-        is_smart: true
-      }
-    ];
-
     try {
-      // Create all nutrition goals
+      // First, create a goal group for nutrition macros
+      const groupResponse = await fetch(`${apiUrl}/life-tracking?resource=goal-groups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category_id: healthCategory.id,
+          name: 'Daily Nutrition Macros',
+          description: 'Track daily calorie and macronutrient intake'
+        })
+      });
+
+      if (!groupResponse.ok) {
+        throw new Error('Failed to create goal group');
+      }
+
+      const groupData = await groupResponse.json();
+      const groupId = groupData.group.id;
+
+      // Create all 4 nutrition goals linked to the group
+      const nutritionGoals = [
+        {
+          category_id: healthCategory.id,
+          group_id: groupId,
+          title: 'Daily Calorie Target',
+          description: 'Track daily calorie intake to meet nutritional goals',
+          goal_type: 'daily',
+          target_value: nutritionTargets.calories,
+          target_unit: 'cal',
+          is_smart: true,
+          is_auto_tracked: true,
+          is_binary: false
+        },
+        {
+          category_id: healthCategory.id,
+          group_id: groupId,
+          title: 'Daily Protein Target',
+          description: 'Meet daily protein intake for muscle maintenance and growth',
+          goal_type: 'daily',
+          target_value: nutritionTargets.protein,
+          target_unit: 'g',
+          is_smart: true,
+          is_auto_tracked: true,
+          is_binary: false
+        },
+        {
+          category_id: healthCategory.id,
+          group_id: groupId,
+          title: 'Daily Carbs Target',
+          description: 'Maintain optimal carbohydrate intake for energy',
+          goal_type: 'daily',
+          target_value: nutritionTargets.carbs,
+          target_unit: 'g',
+          is_smart: true,
+          is_auto_tracked: true,
+          is_binary: false
+        },
+        {
+          category_id: healthCategory.id,
+          group_id: groupId,
+          title: 'Daily Fats Target',
+          description: 'Ensure adequate healthy fat intake',
+          goal_type: 'daily',
+          target_value: nutritionTargets.fats,
+          target_unit: 'g',
+          is_smart: true,
+          is_auto_tracked: true,
+          is_binary: false
+        }
+      ];
+
       for (const goal of nutritionGoals) {
         await fetch(`${apiUrl}/life-tracking?resource=goals`, {
           method: 'POST',

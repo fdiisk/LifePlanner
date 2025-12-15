@@ -92,11 +92,21 @@ CREATE TABLE IF NOT EXISTS life_categories (
   UNIQUE(name)
 );
 
+-- Goal groups for managing related goals together
+CREATE TABLE IF NOT EXISTS goal_groups (
+  id SERIAL PRIMARY KEY,
+  category_id INTEGER REFERENCES life_categories(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Goals with hierarchical structure
 CREATE TABLE IF NOT EXISTS goals (
   id SERIAL PRIMARY KEY,
   category_id INTEGER REFERENCES life_categories(id) ON DELETE CASCADE,
   parent_id INTEGER REFERENCES goals(id) ON DELETE CASCADE,
+  group_id INTEGER REFERENCES goal_groups(id) ON DELETE SET NULL,
   title VARCHAR(300) NOT NULL,
   description TEXT,
   goal_type VARCHAR(20), -- high_level, yearly, quarterly, monthly, weekly, daily
@@ -105,6 +115,10 @@ CREATE TABLE IF NOT EXISTS goals (
   target_value FLOAT,
   target_unit VARCHAR(50),
   is_smart BOOLEAN DEFAULT FALSE, -- Specific, Measurable, Achievable, Relevant, Time-bound
+  is_binary BOOLEAN DEFAULT FALSE, -- TRUE for yes/no goals (drink 3L water), FALSE for numeric goals
+  is_auto_tracked BOOLEAN DEFAULT FALSE, -- TRUE if automatically populated from health logs
+  star_threshold_2 INTEGER DEFAULT 70, -- Percentage for 2 stars (good achievement)
+  star_threshold_3 INTEGER DEFAULT 90, -- Percentage for 3 stars (excellent achievement)
   smart_details JSONB, -- Store SMART breakdown
   calculation_formula TEXT, -- For auto-calculations (e.g., calorie deficit)
   linked_health_metrics JSONB, -- Links to health data (e.g., macros, workouts)

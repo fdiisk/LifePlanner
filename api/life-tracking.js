@@ -102,6 +102,68 @@ export default async function handler(req, res) {
   }
 
   // ===================
+  // GOAL GROUPS
+  // ===================
+  if (resource === 'goal-groups') {
+    if (req.method === 'GET') {
+      try {
+        const { category_id } = req.query;
+        let groups;
+
+        if (category_id) {
+          groups = await sql`
+            SELECT * FROM goal_groups
+            WHERE category_id = ${category_id}
+            ORDER BY created_at DESC
+          `;
+        } else {
+          groups = await sql`SELECT * FROM goal_groups ORDER BY created_at DESC`;
+        }
+
+        return res.status(200).json({ groups });
+      } catch (error) {
+        console.error('Error fetching goal groups:', error);
+        return res.status(500).json({ error: 'Failed to fetch goal groups' });
+      }
+    }
+
+    if (req.method === 'POST') {
+      try {
+        const { category_id, name, description } = req.body;
+        if (!category_id || !name) {
+          return res.status(400).json({ error: 'category_id and name are required' });
+        }
+
+        const result = await sql`
+          INSERT INTO goal_groups (category_id, name, description)
+          VALUES (${category_id}, ${name}, ${description || null})
+          RETURNING *
+        `;
+
+        return res.status(201).json({ success: true, group: result[0] });
+      } catch (error) {
+        console.error('Error creating goal group:', error);
+        return res.status(500).json({ error: 'Failed to create goal group' });
+      }
+    }
+
+    if (req.method === 'DELETE') {
+      try {
+        const { id } = req.query;
+        if (!id) return res.status(400).json({ error: 'Group ID required' });
+
+        const result = await sql`DELETE FROM goal_groups WHERE id = ${id} RETURNING *`;
+        if (result.length === 0) return res.status(404).json({ error: 'Group not found' });
+
+        return res.status(200).json({ success: true, message: 'Group deleted' });
+      } catch (error) {
+        console.error('Error deleting goal group:', error);
+        return res.status(500).json({ error: 'Failed to delete goal group' });
+      }
+    }
+  }
+
+  // ===================
   // GOALS
   // ===================
   if (resource === 'goals') {
@@ -143,9 +205,10 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       try {
         const {
-          category_id, parent_id, title, description, goal_type,
+          category_id, parent_id, group_id, title, description, goal_type,
           timeframe_start, timeframe_end, target_value, target_unit,
-          is_smart, smart_details, calculation_formula, linked_health_metrics
+          is_smart, is_binary, is_auto_tracked, star_threshold_2, star_threshold_3,
+          smart_details, calculation_formula, linked_health_metrics
         } = req.body;
 
         if (!title || !category_id) {
@@ -154,14 +217,17 @@ export default async function handler(req, res) {
 
         const result = await sql`
           INSERT INTO goals (
-            category_id, parent_id, title, description, goal_type,
+            category_id, parent_id, group_id, title, description, goal_type,
             timeframe_start, timeframe_end, target_value, target_unit,
-            is_smart, smart_details, calculation_formula, linked_health_metrics
+            is_smart, is_binary, is_auto_tracked, star_threshold_2, star_threshold_3,
+            smart_details, calculation_formula, linked_health_metrics
           )
           VALUES (
-            ${category_id}, ${parent_id || null}, ${title}, ${description || null}, ${goal_type || 'high_level'},
+            ${category_id}, ${parent_id || null}, ${group_id || null}, ${title}, ${description || null}, ${goal_type || 'high_level'},
             ${timeframe_start || null}, ${timeframe_end || null}, ${target_value || null}, ${target_unit || null},
-            ${is_smart || false}, ${smart_details ? JSON.stringify(smart_details) : null},
+            ${is_smart || false}, ${is_binary || false}, ${is_auto_tracked || false},
+            ${star_threshold_2 || 70}, ${star_threshold_3 || 90},
+            ${smart_details ? JSON.stringify(smart_details) : null},
             ${calculation_formula || null}, ${linked_health_metrics ? JSON.stringify(linked_health_metrics) : null}
           )
           RETURNING *
@@ -566,7 +632,7 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: 'Invalid resource. Use: categories, goals, habits, tracking, or settings' });
+  return res.status(400).json({ error: 'Invalid resource. Use: categories, goal-groups, goals, habits, tracking, or settings' });
 }
 
 // Helper function to build hierarchical goal structure
