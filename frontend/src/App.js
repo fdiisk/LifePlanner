@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { Target, LayoutDashboard, CheckSquare, Crosshair, Utensils, Settings as SettingsIcon, FileText, LogOut } from 'lucide-react';
+import { Target, LayoutDashboard, CheckSquare, Crosshair, Utensils, Settings as SettingsIcon, FileText, LogOut, Menu, X } from 'lucide-react';
 import Login from './components/Login';
 import Track from './pages/Track';
 import Notes from './pages/Notes';
@@ -19,6 +19,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [stats, setStats] = useState({ gym: null, food: null });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -57,6 +58,12 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     setIsAuthenticated(false);
+    setMobileMenuOpen(false);
+  };
+
+  const handleNavigation = (page) => {
+    setCurrentPage(page);
+    setMobileMenuOpen(false);
   };
 
   const handleLoadMeal = async (meal) => {
@@ -91,46 +98,49 @@ function App() {
       <header className="App-header">
         <div className="header-title">
           <h1><Target size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Life Tracker</h1>
+          <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-        <nav className="main-nav">
+        <nav className={`main-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <button
             className={currentPage === 'dashboard' ? 'active' : ''}
-            onClick={() => setCurrentPage('dashboard')}
+            onClick={() => handleNavigation('dashboard')}
           >
             <LayoutDashboard size={16} />
             Dashboard
           </button>
           <button
             className={currentPage === 'tracking' ? 'active' : ''}
-            onClick={() => setCurrentPage('tracking')}
+            onClick={() => handleNavigation('tracking')}
           >
             <CheckSquare size={16} />
             Tracking
           </button>
           <button
             className={currentPage === 'goals' ? 'active' : ''}
-            onClick={() => setCurrentPage('goals')}
+            onClick={() => handleNavigation('goals')}
           >
             <Crosshair size={16} />
             Goals Setup
           </button>
           <button
             className={currentPage === 'meals' ? 'active' : ''}
-            onClick={() => setCurrentPage('meals')}
+            onClick={() => handleNavigation('meals')}
           >
             <Utensils size={16} />
             Meals
           </button>
           <button
             className={currentPage === 'settings' ? 'active' : ''}
-            onClick={() => setCurrentPage('settings')}
+            onClick={() => handleNavigation('settings')}
           >
             <SettingsIcon size={16} />
             Settings
           </button>
           <button
             className={currentPage === 'devnotes' ? 'active' : ''}
-            onClick={() => setCurrentPage('devnotes')}
+            onClick={() => handleNavigation('devnotes')}
           >
             <FileText size={16} />
             Dev Notes
