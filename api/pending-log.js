@@ -70,6 +70,20 @@ CONTEXT AWARENESS - AVOID DUPLICATES:
 - Parse holistically - if listing ingredients with amounts/quantities, treat each as ONE item
 - User preference: When home-cooked meals are described with individual ingredients, list each ingredient separately
 
+RAW WEIGHT HANDLING:
+- If input says "raw weight" or "raw", the weight is BEFORE cooking
+- Apply cooking loss: raw meat loses ~25% weight when cooked (200g raw = ~150g cooked)
+- Calculate macros based on COOKED weight
+- Example: "200g raw weight 10% mince" → 150g cooked weight, calculate macros for 150g
+- For non-meat items, use weight as-is
+
+FOOD NAMING - DO NOT ADD COOKING METHODS:
+- Keep food names simple and specific: "10% beef mince" NOT "beef mince patty, grilled"
+- Preserve brand/variety details: "american cheese" NOT "cheese, melted"
+- Preserve specific types: "brioche bun" NOT "burger bun, toasted"
+- NO cooking methods in the food name (no "grilled", "fried", "toasted", "melted", etc.)
+- Use specific variety when mentioned: "10% beef mince", "5% beef mince", "regular beef mince"
+
 BRANDED PRODUCT DETECTION:
 If input mentions specific brands/stores (Coles, Woolworths, 7-11, McDonald's, KFC, Hungry Jack's, Subway, Heinz, etc.), search your knowledge base for EXACT nutrition facts from:
 1. CalorieKing Australia database
@@ -79,26 +93,34 @@ If input mentions specific brands/stores (Coles, Woolworths, 7-11, McDonald's, K
 For branded items, return accurate macros from these sources. Mark dataSource as "verified:[source]".
 For generic/unbranded items, estimate and mark dataSource as "estimated".
 
+SMALL ITEMS (sachets, packets, condiments):
+- If specific brand mentioned (e.g., "Heinz ketchup sachet"), search for exact data
+- If brand not available or not specified, use generic estimates:
+  - Generic ketchup sachet (~10g): 10 cal, 0g protein, 3g carbs, 0g fat
+  - Generic mayo sachet (~10g): 70 cal, 0g protein, 0.5g carbs, 7.5g fat
+  - Generic mustard sachet (~5g): 5 cal, 0g protein, 0.5g carbs, 0g fat
+
 Rules:
 1. Each ingredient with a quantity = ONE separate item (e.g., "200g mince" = 1 item, "1 slice cheese" = 1 item)
-2. For BRANDED items: Use exact nutrition data (e.g., "Heinz ketchup sachet" = official Heinz data)
-3. For GENERIC items: Estimate if amounts not specified
-4. Include preparation method if mentioned (grilled, fried, boiled, raw, etc.)
+2. For BRANDED items: Use exact nutrition data (e.g., "Coles brioche bun" = official Coles data)
+3. For GENERIC items: Estimate based on standard portions
+4. DO NOT include cooking methods in food names
 5. NO DUPLICATES - if the same food type appears multiple times in description, only create ONE item for it
 6. Be smart about context - "burger cheese" describes the cheese TYPE, not a burger
+7. Parse ALL mentioned items - don't skip condiments or small items
 
 Return ONLY this JSON (no other text):
 {
   "items": [
     {
-      "food": "beef mince patty",
-      "amount": 200,
+      "food": "10% beef mince",
+      "amount": 150,
       "unit": "g",
-      "preparation": "grilled",
-      "calories": 300,
-      "protein": 20,
+      "rawAmount": 200,
+      "calories": 225,
+      "protein": 39,
       "carbs": 0,
-      "fats": 24,
+      "fats": 8,
       "dataSource": "estimated",
       "needsClarification": false,
       "clarificationOptions": []
@@ -109,17 +131,29 @@ Return ONLY this JSON (no other text):
 Examples:
 Branded:
 - "1 slice Coles American cheese" → Search for Coles American cheese slice, exact macros, dataSource: "verified:Coles"
-- "1 sachet Heinz ketchup" → Search Heinz ketchup sachet, exact macros, dataSource: "verified:Heinz"
-- "1tbsp Heinz garlic aioli" → Search Heinz garlic aioli, exact macros per tablespoon
+- "half sachet Heinz ketchup" → Search Heinz ketchup sachet (if not available use generic), divide by 2
+- "Coles brioche bun" → Search for Coles brioche burger bun, exact macros, dataSource: "verified:Coles"
+
+Raw Weight:
+- "200g raw weight 10% mince" → amount: 150 (cooked), rawAmount: 200, use 10% fat beef mince macros for 150g
+- "100g raw chicken" → amount: 75 (cooked), rawAmount: 100
+
+Food Naming:
+- "200g 10% mince burger" → food: "10% beef mince", amount: 200 (NOT "beef mince patty, grilled")
+- "slice american cheese" → food: "american cheese", amount: 1, unit: "slice" (NOT "cheese, melted")
+- "brioche bun" → food: "brioche bun", amount: 1, unit: "bun" (NOT "burger bun, toasted")
 
 Context Awareness:
-- "200g 10% mince burger, burger cheese, burger bun" → THREE items: [mince patty 200g], [cheese slice], [bun] (NOT multiple burgers)
-- "3l water, 200g mince, 1 slice cheese" → THREE items: [water 3L], [mince 200g], [cheese 1 slice]
+- "200g 10% mince burger, burger cheese, burger bun" → THREE items: [10% beef mince 200g], [american cheese 1 slice], [brioche bun 1 bun]
+- "3l water, 200g mince, 1 slice cheese" → THREE items: [water 3L], [beef mince 200g], [cheese 1 slice]
 
 CRITICAL:
 - Return valid JSON only
 - Each ingredient with amount = ONE item
 - NO duplicates of same food type
+- NO cooking methods in food names
+- Handle raw weight with 25% cooking loss for meat
+- Parse ALL items including condiments
 - Understand context - "burger cheese" is not a burger
 - For branded products, search CalorieKing Australia and MyFitnessPal
 - Include accurate macros (calories, protein, carbs, fats) in JSON
@@ -143,6 +177,13 @@ export function splitItemsPrompt(inputText) {
   return `Split this health/fitness input into separate items. Extract each distinct activity/item with its time if mentioned.
 
 Input: "${inputText}"
+
+MULTIPLIER DETECTION:
+- Look for multiplier patterns: "2x", "3x", "two", "three", etc. at the start
+- Pattern: "2x [meal], each had - [ingredients]" = CREATE 2 identical food items
+- Pattern: "3x burger with cheese" = CREATE 3 identical food items
+- Extract the meal description AFTER the multiplier
+- Create that many separate items with the SAME text
 
 TIME EXTRACTION - CRITICAL:
 - Look for time patterns: "at 8am", "at 1pm", "11am", "2:30pm", etc.
@@ -186,9 +227,19 @@ Examples:
   [{"category":"water", "text":"1L water", "time":"11am"},
    {"category":"steps", "text":"3k steps", "time":null}]
 
+- "2x burger, each had - 200g mince, slice cheese, bun" → TWO identical food items:
+  [{"category":"food", "text":"200g mince, slice cheese, bun", "time":null},
+   {"category":"food", "text":"200g mince, slice cheese, bun", "time":null}]
+
+- "3x protein shake" → THREE items:
+  [{"category":"food", "text":"protein shake", "time":null},
+   {"category":"food", "text":"protein shake", "time":null},
+   {"category":"food", "text":"protein shake", "time":null}]
+
 CRITICAL:
 - Return valid JSON only
 - Extract ALL items from input
+- Handle multipliers (2x, 3x) by creating multiple identical items
 - Extract time for EACH item separately
 - "one at X and one at Y" = TWO separate items with different times`;
 }
