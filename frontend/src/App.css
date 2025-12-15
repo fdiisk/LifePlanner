@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
 
+html {
+  font-size: 16px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -52,7 +56,7 @@ body {
   padding: 10px 18px;
   background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   color: #6b7280;
   font-size: 14px;
   font-weight: 400;
@@ -97,7 +101,7 @@ body {
 .quick-log {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 16px;
+  border-radius: 0.25rem;
   padding: 24px;
   margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -121,7 +125,7 @@ body {
   padding: 14px 16px;
   background: #f9fafb;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   color: #1f2937;
   font-size: 14px;
   font-family: 'Atkinson Hyperlegible', sans-serif;
@@ -144,7 +148,7 @@ body {
 .pending-logs {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 16px;
+  border-radius: 0.25rem;
   padding: 24px;
   margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -174,7 +178,7 @@ body {
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: #1f2937;
   font-size: 13px;
   font-family: 'Atkinson Hyperlegible', sans-serif;
@@ -203,7 +207,7 @@ body {
 .pending-item {
   background: rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   padding: 16px;
   margin-bottom: 8px;
   transition: all 0.2s;
@@ -240,7 +244,7 @@ body {
   padding: 6px 12px;
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 6px;
+  border-radius: 0.25rem;
   color: #3b82f6;
   font-size: 12px;
   font-weight: 500;
@@ -258,7 +262,7 @@ body {
   padding: 6px 12px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 6px;
+  border-radius: 0.25rem;
   color: #f87171;
   font-size: 12px;
   font-weight: 500;
@@ -295,7 +299,7 @@ body {
 .food-item-detail {
   background: rgba(0, 102, 255, 0.05);
   border: 1px solid rgba(0, 102, 255, 0.15);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   padding: 10px 12px;
 }
 
@@ -348,7 +352,7 @@ body {
   padding: 12px 20px;
   background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
   border: none;
-  border-radius: 10px;
+  border-radius: 0.25rem;
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
@@ -399,7 +403,7 @@ body {
 .result {
   margin-top: 16px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 0.25rem;
   font-size: 13px;
   line-height: 1.6;
 }
@@ -427,7 +431,7 @@ body {
 .stat-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(250, 250, 250, 0.8) 100%);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
+  border-radius: 0.25rem;
   padding: 24px;
   backdrop-filter: blur(8px);
   transition: all 0.3s;
@@ -473,7 +477,7 @@ body {
 .recent-logs {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(250, 250, 250, 0.8) 100%);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
+  border-radius: 0.25rem;
   padding: 24px;
   backdrop-filter: blur(8px);
   transition: all 0.3s;
@@ -503,7 +507,7 @@ body {
   padding: 8px 16px;
   background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: #6b7280;
   font-size: 14px;
   font-weight: 500;
@@ -532,7 +536,7 @@ body {
 .log-item {
   background: rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   padding: 16px;
   margin-bottom: 8px;
   transition: all 0.2s;
@@ -608,7 +612,7 @@ body {
 .spitball-form {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(250, 250, 250, 0.8) 100%);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
+  border-radius: 0.25rem;
   padding: 24px;
   margin-bottom: 16px;
   backdrop-filter: blur(8px);
@@ -631,7 +635,7 @@ body {
   padding: 8px 16px;
   background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: #6b7280;
   font-size: 14px;
   font-weight: 500;
@@ -661,7 +665,7 @@ body {
   padding: 14px 16px;
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   color: #1f2937;
   font-size: 14px;
   font-family: 'Atkinson Hyperlegible', sans-serif;
@@ -706,7 +710,7 @@ body {
 .modal-content {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 16px;
+  border-radius: 0.25rem;
   padding: 32px;
   max-width: 450px;
   width: 90%;
@@ -749,7 +753,7 @@ body {
   padding: 10px 20px;
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: #1f2937;
   font-size: 14px;
   font-weight: 500;
@@ -767,7 +771,7 @@ body {
   padding: 10px 20px;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -811,7 +815,7 @@ body {
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: #1f2937;
   font-size: 14px;
   cursor: pointer;
@@ -826,7 +830,7 @@ body {
 .macro-summary {
   background: linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(0, 82, 204, 0.04) 100%);
   border: 1px solid rgba(0, 102, 255, 0.2);
-  border-radius: 16px;
+  border-radius: 0.25rem;
   padding: 24px;
   margin-bottom: 24px;
 }
@@ -873,7 +877,7 @@ body {
 .category-card {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.2s;
@@ -953,7 +957,7 @@ body {
   padding: 16px;
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
+  border-radius: 0.25rem;
 }
 
 .edit-food-item h4 {
@@ -987,7 +991,7 @@ body {
   padding: 10px 12px;
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   font-size: 14px;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   color: #1f2937;
@@ -1012,12 +1016,12 @@ body {
 
 .edit-modal-content::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.04);
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 .edit-modal-content::-webkit-scrollbar-thumb {
   background: rgba(0, 102, 255, 0.3);
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 .edit-modal-content::-webkit-scrollbar-thumb:hover {
@@ -1029,7 +1033,7 @@ body {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1071,7 +1075,7 @@ body {
 .search-input {
   padding: 10px 16px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   font-size: 14px;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   background: white;
@@ -1094,7 +1098,7 @@ body {
 .meal-card {
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   padding: 20px;
   transition: all 0.2s;
 }
@@ -1122,7 +1126,7 @@ body {
   background: rgba(0, 102, 255, 0.1);
   color: #0066ff;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 0.25rem;
   font-size: 11px;
   font-weight: 600;
 }
@@ -1134,7 +1138,7 @@ body {
   margin-bottom: 16px;
   padding: 12px;
   background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
+  border-radius: 0.25rem;
 }
 
 .meal-macros .macro-item {
@@ -1160,7 +1164,7 @@ body {
   margin-bottom: 16px;
   padding: 12px;
   background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   max-height: 150px;
   overflow-y: auto;
 }
@@ -1187,7 +1191,7 @@ body {
   padding: 10px;
   background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: white;
   font-weight: 600;
   font-size: 13px;
@@ -1204,7 +1208,7 @@ body {
   padding: 10px 14px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
@@ -1234,7 +1238,7 @@ body {
 
 .ingredients-list {
   background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   padding: 12px;
   max-height: 200px;
   overflow-y: auto;
@@ -1275,7 +1279,7 @@ body {
 .meal-title-input input {
   padding: 12px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   font-size: 14px;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   transition: all 0.2s;
@@ -1291,7 +1295,7 @@ body {
   padding: 8px 12px;
   background: rgba(0, 102, 255, 0.1);
   border: 1px solid rgba(0, 102, 255, 0.3);
-  border-radius: 6px;
+  border-radius: 0.25rem;
   color: #0066ff;
   font-size: 12px;
   font-weight: 500;
@@ -1308,7 +1312,7 @@ body {
   padding: 6px 10px;
   background: rgba(0, 102, 255, 0.1);
   border: 1px solid rgba(0, 102, 255, 0.3);
-  border-radius: 6px;
+  border-radius: 0.25rem;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
@@ -1349,7 +1353,7 @@ body {
 .btn-save,
 .btn-cancel {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 0.25rem;
   font-size: 14px;
   font-weight: 500;
   font-family: 'Atkinson Hyperlegible', sans-serif;
@@ -1396,7 +1400,7 @@ body {
 .dev-notes-progress {
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   padding: 20px;
   margin-bottom: 24px;
 }
@@ -1429,14 +1433,14 @@ body {
   width: 100%;
   height: 8px;
   background: rgba(0, 0, 0, 0.06);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, #0066ff 0%, #0052cc 100%);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   transition: width 0.3s ease;
 }
 
@@ -1449,7 +1453,7 @@ body {
 .dev-notes-phase {
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   overflow: hidden;
   transition: all 0.2s;
 }
@@ -1485,7 +1489,7 @@ body {
 
 .phase-status {
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: 0.25rem;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1521,7 +1525,7 @@ body {
   padding: 10px 12px;
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   color: #4b5563;
   font-size: 14px;
   line-height: 1.6;
@@ -1531,7 +1535,7 @@ body {
   padding: 14px 16px;
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
+  border-radius: 0.25rem;
   transition: all 0.2s;
 }
 
@@ -1556,7 +1560,7 @@ body {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   border: 2px solid rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
   margin-top: 2px;
@@ -1595,7 +1599,7 @@ body {
   padding: 8px 12px;
   background: rgba(59, 130, 246, 0.05);
   border-left: 3px solid rgba(59, 130, 246, 0.3);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   font-style: italic;
 }
 
@@ -1609,7 +1613,7 @@ body {
 .dev-notes-editor {
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  border-radius: 0.25rem;
   padding: 20px;
 }
 
@@ -1619,7 +1623,7 @@ body {
   padding: 16px;
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
+  border-radius: 0.25rem;
   font-size: 13px;
   font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
   line-height: 1.6;
