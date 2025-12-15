@@ -632,7 +632,93 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: 'Invalid resource. Use: categories, goal-groups, goals, habits, tracking, or settings' });
+  // ===================
+  // GOAL ACHIEVEMENTS
+  // ===================
+  if (resource === 'goal-achievements') {
+    if (req.method === 'GET') {
+      try {
+        const { date } = req.query;
+        const targetDate = date || new Date().toISOString().split('T')[0];
+
+        // Fetch all daily goals
+        const dailyGoals = await sql`
+          SELECT * FROM goals
+          WHERE goal_type = 'daily'
+          AND is_auto_tracked = true
+          AND status = 'active'
+        `;
+
+        // Fetch pending logs for the date
+        const pendingLogs = await sql`
+          SELECT * FROM pending_logs
+          WHERE date = ${targetDate}
+          AND compiled = false
+        `;
+
+        // Fetch compiled stats
+        const compiledStats = await sql`
+          SELECT SUM(calories) as total_calories,
+                 SUM(protein) as total_protein,
+                 SUM(carbs) as total_carbs,
+                 SUM(fats) as total_fats
+          FROM food_logs
+          WHERE DATE(date) = ${targetDate}
+        `;
+
+        // Calculate achievements for each goal
+        const achievements = {};
+
+        dailyGoals.forEach(goal => {
+          const title = goal.title.toLowerCase();
+          let achieved = 0;
+          let target = parseFloat(goal.target_value) || 0;
+
+          if (target === 0) {
+            achievements[goal.id] = { percentage: 0, achieved: 0, target: 0 };
+            return;
+          }
+
+          // Check compiled stats first
+          if (compiledStats.length > 0 && compiledStats[0].total_calories) {
+            const stats = compiledStats[0];
+            if (title.includes('calorie')) achieved = parseFloat(stats.total_calories) || 0;
+            else if (title.includes('protein')) achieved = parseFloat(stats.total_protein) || 0;
+            else if (title.includes('carb')) achieved = parseFloat(stats.total_carbs) || 0;
+            else if (title.includes('fat')) achieved = parseFloat(stats.total_fats) || 0;
+          } else {
+            // Fall back to pending logs
+            pendingLogs.forEach(log => {
+              if (log.category === 'food') {
+                const parsedData = typeof log.parsed_data === 'string'
+                  ? JSON.parse(log.parsed_data)
+                  : log.parsed_data;
+
+                if (parsedData && parsedData.items) {
+                  parsedData.items.forEach(item => {
+                    if (title.includes('calorie')) achieved += item.calories || 0;
+                    else if (title.includes('protein')) achieved += item.protein || 0;
+                    else if (title.includes('carb')) achieved += item.carbs || 0;
+                    else if (title.includes('fat')) achieved += item.fats || 0;
+                  });
+                }
+              }
+            });
+          }
+
+          const percentage = Math.round((achieved / target) * 100);
+          achievements[goal.id] = { percentage, achieved: Math.round(achieved), target };
+        });
+
+        return res.status(200).json({ achievements, date: targetDate });
+      } catch (error) {
+        console.error('Error calculating goal achievements:', error);
+        return res.status(500).json({ error: 'Failed to calculate achievements' });
+      }
+    }
+  }
+
+  return res.status(400).json({ error: 'Invalid resource. Use: categories, goal-groups, goals, habits, tracking, settings, or goal-achievements' });
 }
 
 // Helper function to build hierarchical goal structure

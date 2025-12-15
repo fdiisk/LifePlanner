@@ -4,6 +4,7 @@ import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calen
 function GoalsSetup({ apiUrl }) {
   const [goals, setGoals] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [achievements, setAchievements] = useState({});
   const [loading, setLoading] = useState(true);
   const [expandedGoals, setExpandedGoals] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
@@ -62,16 +63,21 @@ function GoalsSetup({ apiUrl }) {
       // Ensure Health category exists
       await ensureHealthCategory();
 
-      const [categoriesRes, goalsRes] = await Promise.all([
+      const today = new Date().toISOString().split('T')[0];
+
+      const [categoriesRes, goalsRes, achievementsRes] = await Promise.all([
         fetch(`${apiUrl}/life-tracking?resource=categories`),
-        fetch(`${apiUrl}/life-tracking?resource=goals`)
+        fetch(`${apiUrl}/life-tracking?resource=goals`),
+        fetch(`${apiUrl}/life-tracking?resource=goal-achievements&date=${today}`)
       ]);
 
       const categoriesData = await categoriesRes.json();
       const goalsData = await goalsRes.json();
+      const achievementsData = await achievementsRes.json();
 
       setCategories(categoriesData.categories || []);
       setGoals(goalsData.goals || []);
+      setAchievements(achievementsData.achievements || {});
     } catch (error) {
       console.error('Error fetching goals data:', error);
     }
@@ -343,26 +349,34 @@ function GoalsSetup({ apiUrl }) {
   };
 
   const getStarRating = (goal) => {
-    // Mock calculation - in real app, fetch from daily logs
-    // For now, return random for demo, will integrate with health logs later
     if (!goal.target_value || !goal.is_auto_tracked) return null;
 
-    // This will be replaced with actual health log data
-    const mockAchievedPercentage = Math.floor(Math.random() * 120);
+    const achievementData = achievements[goal.id];
+    if (!achievementData) return null;
 
+    const percentage = achievementData.percentage;
     const threshold2 = goal.star_threshold_2 || 70;
     const threshold3 = goal.star_threshold_3 || 90;
 
-    if (mockAchievedPercentage >= threshold3) return 3;
-    if (mockAchievedPercentage >= threshold2) return 2;
-    return 1;
+    if (percentage >= threshold3) return 3;
+    if (percentage >= threshold2) return 2;
+    if (percentage > 0) return 1;
+    return null; // No stars if no progress
   };
 
-  const renderStars = (rating) => {
+  const renderStars = (goal, rating) => {
     if (!rating) return null;
 
+    const achievementData = achievements[goal.id];
+    const tooltip = achievementData
+      ? `${achievementData.achieved}/${achievementData.target}${goal.target_unit} (${achievementData.percentage}%)`
+      : '';
+
     return (
-      <div style={{ display: 'flex', gap: '2px', marginLeft: '8px' }}>
+      <div
+        style={{ display: 'flex', gap: '2px', marginLeft: '8px', cursor: 'help' }}
+        title={tooltip}
+      >
         {[1, 2, 3].map(i => (
           <Star
             key={i}
@@ -425,7 +439,7 @@ function GoalsSetup({ apiUrl }) {
                       Grouped
                     </span>
                   )}
-                  {starRating && renderStars(starRating)}
+                  {starRating && renderStars(goal, starRating)}
                 </div>
 
                 {goal.description && (
