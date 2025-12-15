@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity } from 'lucide-react';
+import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity, Star } from 'lucide-react';
 
 function GoalsSetup({ apiUrl }) {
   const [goals, setGoals] = useState([]);
@@ -330,10 +330,58 @@ function GoalsSetup({ apiUrl }) {
     }
   };
 
+  const getGoalTypeColor = (goalType) => {
+    const colors = {
+      high_level: '#8b5cf6',    // purple
+      yearly: '#ef4444',         // red
+      quarterly: '#f59e0b',      // amber
+      monthly: '#10b981',        // green
+      weekly: '#3b82f6',         // blue
+      daily: '#0066ff'           // deep blue
+    };
+    return colors[goalType] || '#6b7280';
+  };
+
+  const getStarRating = (goal) => {
+    // Mock calculation - in real app, fetch from daily logs
+    // For now, return random for demo, will integrate with health logs later
+    if (!goal.target_value || !goal.is_auto_tracked) return null;
+
+    // This will be replaced with actual health log data
+    const mockAchievedPercentage = Math.floor(Math.random() * 120);
+
+    const threshold2 = goal.star_threshold_2 || 70;
+    const threshold3 = goal.star_threshold_3 || 90;
+
+    if (mockAchievedPercentage >= threshold3) return 3;
+    if (mockAchievedPercentage >= threshold2) return 2;
+    return 1;
+  };
+
+  const renderStars = (rating) => {
+    if (!rating) return null;
+
+    return (
+      <div style={{ display: 'flex', gap: '2px', marginLeft: '8px' }}>
+        {[1, 2, 3].map(i => (
+          <Star
+            key={i}
+            size={14}
+            fill={i <= rating ? '#fbbf24' : 'none'}
+            stroke={i <= rating ? '#fbbf24' : '#d1d5db'}
+            strokeWidth={1.5}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const renderGoalTree = (goalsList, level = 0, renderedGroups = new Set()) => {
     return goalsList.map(goal => {
       const isGrouped = goal.group_id != null;
       const isFirstInGroup = isGrouped && !renderedGroups.has(goal.group_id);
+      const starRating = getStarRating(goal);
+      const typeColor = getGoalTypeColor(goal.goal_type);
 
       if (isFirstInGroup) {
         renderedGroups.add(goal.group_id);
@@ -341,7 +389,10 @@ function GoalsSetup({ apiUrl }) {
 
       return (
         <div key={goal.id} style={{ marginLeft: `${level * 24}px` }}>
-          <div className="goal-item">
+          <div className="goal-item" style={{
+            borderLeft: `3px solid ${typeColor}`,
+            paddingLeft: '12px'
+          }}>
             <div className="goal-main">
               <button
                 className="goal-toggle"
@@ -353,9 +404,15 @@ function GoalsSetup({ apiUrl }) {
 
               <div className="goal-content">
                 <div className="goal-header-row">
-                  <Target size={16} style={{ color: '#0066ff', flexShrink: 0 }} />
+                  <Target size={16} style={{ color: typeColor, flexShrink: 0 }} />
                   <span className="goal-title">{goal.title}</span>
-                  <span className="goal-type-badge">{goal.goal_type.replace('_', ' ')}</span>
+                  <span className="goal-type-badge" style={{
+                    background: `${typeColor}15`,
+                    color: typeColor,
+                    border: `1px solid ${typeColor}40`
+                  }}>
+                    {goal.goal_type.replace('_', ' ')}
+                  </span>
                   {isGrouped && (
                     <span style={{
                       fontSize: '11px',
@@ -368,6 +425,7 @@ function GoalsSetup({ apiUrl }) {
                       Grouped
                     </span>
                   )}
+                  {starRating && renderStars(starRating)}
                 </div>
 
                 {goal.description && (
@@ -458,6 +516,37 @@ function GoalsSetup({ apiUrl }) {
             <Plus size={16} /> Add Goal
           </button>
         </div>
+      </div>
+
+      {/* Hierarchy Legend */}
+      <div style={{
+        marginBottom: '20px',
+        padding: '16px',
+        background: '#f9fafb',
+        borderRadius: '0.25rem',
+        border: '1px solid #e5e7eb'
+      }}>
+        <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: '#374151' }}>
+          Goal Hierarchy
+        </h4>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '12px' }}>
+          {['high_level', 'yearly', 'quarterly', 'monthly', 'weekly', 'daily'].map(type => (
+            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                width: '3px',
+                height: '16px',
+                background: getGoalTypeColor(type),
+                borderRadius: '2px'
+              }} />
+              <span style={{ color: '#6b7280', textTransform: 'capitalize' }}>
+                {type.replace('_', ' ')}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p style={{ marginTop: '8px', fontSize: '12px', color: '#9ca3af' }}>
+          Build your goals from high-level visions down to daily actions. Star ratings show achievement (1★ = attempted, 2★ = 70%+, 3★ = 90%+).
+        </p>
       </div>
 
       {goals.length === 0 ? (
@@ -638,14 +727,26 @@ function GoalsSetup({ apiUrl }) {
                   value={formData.goal_type}
                   onChange={(e) => setFormData({ ...formData, goal_type: e.target.value })}
                   required
+                  style={{ paddingRight: '32px' }}
                 >
-                  <option value="high_level">High Level</option>
-                  <option value="yearly">Yearly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="daily">Daily</option>
+                  <option value="high_level">High Level - Life vision & major objectives</option>
+                  <option value="yearly">Yearly - Annual goals & milestones</option>
+                  <option value="quarterly">Quarterly - 3-month targets</option>
+                  <option value="monthly">Monthly - 30-day focus areas</option>
+                  <option value="weekly">Weekly - 7-day priorities</option>
+                  <option value="daily">Daily - Daily actions & habits</option>
                 </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
+                  <div style={{
+                    width: '3px',
+                    height: '12px',
+                    background: getGoalTypeColor(formData.goal_type),
+                    borderRadius: '2px'
+                  }} />
+                  <small style={{ color: '#9ca3af', fontSize: '11px' }}>
+                    Color-coded in tree view
+                  </small>
+                </div>
               </div>
 
               <div className="form-group">
