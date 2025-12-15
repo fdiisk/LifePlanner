@@ -1040,3 +1040,274 @@ body {
   color: #6b7280;
   border: 1px solid rgba(156, 163, 175, 0.3);
 }
+
+/* Saved Meals */
+.saved-meals {
+  padding: 24px;
+}
+
+.saved-meals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.saved-meals-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.search-input {
+  padding: 10px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  background: white;
+  min-width: 250px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.meals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.meal-card {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+}
+
+.meal-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.meal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.meal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  flex: 1;
+}
+
+.usage-badge {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.meal-macros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+.meal-macros .macro-item {
+  text-align: center;
+}
+
+.meal-macros .macro-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.meal-macros .macro-label {
+  display: block;
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.meal-ingredients {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.ingredient-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.ingredient-item:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.meal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-load {
+  flex: 1;
+  padding: 10px;
+  background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-load:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+}
+
+.btn-delete-meal {
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-meal:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Save Meal Modal */
+.save-meal-modal {
+  max-width: 500px;
+}
+
+.save-meal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.meal-preview h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.ingredients-list {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ingredient-preview {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.ingredient-preview:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ingredient-name {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.ingredient-amount {
+  color: #6b7280;
+}
+
+.meal-title-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meal-title-input label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.meal-title-input input {
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+}
+
+.meal-title-input input:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.btn-use-auto {
+  padding: 8px 12px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-use-auto:hover {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+/* Save Meal Button in Pending Logs */
+.btn-save-meal {
+  padding: 6px 10px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-save-meal:hover {
+  background: rgba(34, 197, 94, 0.2);
+  transform: translateY(-1px);
+}

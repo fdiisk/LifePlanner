@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Modal from './Modal';
 import EditModal from './EditModal';
+import SaveMealModal from './SaveMealModal';
 
 function PendingLogs({ apiUrl, refreshTrigger }) {
   const [logs, setLogs] = useState({
@@ -18,6 +19,7 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [modalConfig, setModalConfig] = useState({ isOpen: false });
   const [editModalConfig, setEditModalConfig] = useState({ isOpen: false, entry: null, category: null });
+  const [saveMealConfig, setSaveMealConfig] = useState({ isOpen: false, ingredients: [] });
 
   const fetchPendingLogs = useCallback(async () => {
     setLoading(true);
@@ -76,6 +78,41 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
       fetchPendingLogs();
     } catch (error) {
       console.error('Error updating log:', error);
+    }
+  };
+
+  const handleSaveAsMeal = (entry) => {
+    if (entry.parsed_data && entry.parsed_data.items) {
+      setSaveMealConfig({
+        isOpen: true,
+        ingredients: entry.parsed_data.items
+      });
+    }
+  };
+
+  const handleSaveMeal = async (title) => {
+    try {
+      await axios.post(`${apiUrl}/saved-meals`, {
+        title: title,
+        ingredients: saveMealConfig.ingredients
+      });
+
+      setModalConfig({
+        isOpen: true,
+        title: 'Success!',
+        message: `Meal "${title}" saved successfully!`,
+        confirmText: 'OK',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Error saving meal:', error);
+      setModalConfig({
+        isOpen: true,
+        title: 'Error',
+        message: error.response?.data?.error || 'Failed to save meal. Please try again.',
+        confirmText: 'OK',
+        type: 'danger'
+      });
     }
   };
 
@@ -207,6 +244,15 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
                     <div className="pending-item-header">
                       <span className="pending-time">{formatTime(entry.logged_at)}</span>
                       <div className="pending-item-actions">
+                        {category === 'food' && entry.parsed_data?.items && entry.parsed_data.items.length > 0 && (
+                          <button
+                            className="btn-save-meal"
+                            onClick={() => handleSaveAsMeal(entry)}
+                            title="Save as meal"
+                          >
+                            💾
+                          </button>
+                        )}
                         <button
                           className="btn-edit"
                           onClick={() => handleEdit(entry, category)}
@@ -327,6 +373,13 @@ function PendingLogs({ apiUrl, refreshTrigger }) {
         onSave={handleSaveEdit}
         entry={editModalConfig.entry}
         category={editModalConfig.category}
+      />
+
+      <SaveMealModal
+        isOpen={saveMealConfig.isOpen}
+        onClose={() => setSaveMealConfig({ isOpen: false, ingredients: [] })}
+        onSave={handleSaveMeal}
+        ingredients={saveMealConfig.ingredients}
       />
     </div>
   );

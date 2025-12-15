@@ -65,3 +65,18 @@ CREATE TABLE IF NOT EXISTS steps_logs (
   total_steps INTEGER NOT NULL,
   from_running INTEGER DEFAULT 0
 );
+
+-- Saved meals for quick logging
+CREATE TABLE IF NOT EXISTS saved_meals (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  ingredients JSONB NOT NULL, -- Array of parsed food items
+  total_calories INTEGER,
+  total_protein INTEGER,
+  total_carbs INTEGER,
+  total_fats INTEGER,
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_used TIMESTAMP,
+  times_used INTEGER DEFAULT 0,
+  UNIQUE(title)
+);

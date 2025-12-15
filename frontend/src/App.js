@@ -5,6 +5,8 @@ import Track from './pages/Track';
 import Notes from './pages/Notes';
 import Dashboard from './components/Dashboard';
 import StatsDisplay from './components/StatsDisplay';
+import SavedMeals from './components/SavedMeals';
+import axios from 'axios';
 
 const API_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://192.168.1.106:5001/api';
 
@@ -52,6 +54,29 @@ function App() {
     setIsAuthenticated(false);
   };
 
+  const handleLoadMeal = async (meal) => {
+    try {
+      // Create a pending log entry for today with the meal ingredients
+      const today = new Date().toISOString().split('T')[0];
+
+      // Build the input text from ingredients
+      const ingredientsText = JSON.parse(meal.ingredients)
+        .map(item => `${item.amount}${item.unit || 'g'} ${item.food}`)
+        .join(', ');
+
+      await axios.post(`${API_URL}/pending-log`, {
+        input: ingredientsText,
+        date: today
+      });
+
+      // Switch to dashboard to see the loaded meal
+      setCurrentPage('dashboard');
+    } catch (error) {
+      console.error('Error loading meal:', error);
+      throw error;
+    }
+  };
+
   if (!isAuthenticated) {
     return <Login onLoginSuccess={handleLoginSuccess} apiUrl={API_URL} />;
   }
@@ -80,6 +105,12 @@ function App() {
             Stats
           </button>
           <button
+            className={currentPage === 'meals' ? 'active' : ''}
+            onClick={() => setCurrentPage('meals')}
+          >
+            Meals
+          </button>
+          <button
             className={currentPage === 'notes' ? 'active' : ''}
             onClick={() => setCurrentPage('notes')}
           >
@@ -105,6 +136,10 @@ function App() {
             <h2>Stats</h2>
             <StatsDisplay stats={stats} />
           </>
+        )}
+
+        {currentPage === 'meals' && (
+          <SavedMeals apiUrl={API_URL} onLoadMeal={handleLoadMeal} />
         )}
 
         {currentPage === 'notes' && (
