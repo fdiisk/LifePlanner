@@ -7,6 +7,7 @@ import LifeDashboard from './pages/LifeDashboard';
 import Tracking from './pages/Tracking';
 import GoalsSetup from './pages/GoalsSetup';
 import Settings from './pages/Settings';
+import DevelopmentNotes from './pages/DevelopmentNotes';
 import StatsDisplay from './components/StatsDisplay';
 import SavedMeals from './components/SavedMeals';
 import axios from 'axios';
@@ -119,6 +120,12 @@ function App() {
           >
             ⚙️ Settings
           </button>
+          <button
+            className={currentPage === 'devnotes' ? 'active' : ''}
+            onClick={() => setCurrentPage('devnotes')}
+          >
+            📝 Dev Notes
+          </button>
           <button onClick={handleLogout}>
             Logout
           </button>
@@ -144,6 +151,10 @@ function App() {
 
         {currentPage === 'settings' && (
           <Settings apiUrl={API_URL} />
+        )}
+
+        {currentPage === 'devnotes' && (
+          <DevelopmentNotes />
         )}
 
         {/* Legacy pages - keeping for reference */}
