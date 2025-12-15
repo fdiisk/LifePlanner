@@ -89,7 +89,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1><Target size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Life Tracker</h1>
+        <div className="header-title">
+          <h1><Target size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Life Tracker</h1>
+        </div>
         <nav className="main-nav">
           <button
             className={currentPage === 'dashboard' ? 'active' : ''}
