@@ -28,7 +28,10 @@ function GoalsSetup({ apiUrl }) {
     timeframe_end: '',
     target_value: '',
     target_unit: '',
-    is_smart: false
+    is_smart: false,
+    health_metric_type: '',
+    star_threshold_2: 70,
+    star_threshold_3: 90
   });
 
   const ensureHealthCategory = useCallback(async () => {
@@ -162,7 +165,10 @@ function GoalsSetup({ apiUrl }) {
       timeframe_end: '',
       target_value: '',
       target_unit: '',
-      is_smart: false
+      is_smart: false,
+      health_metric_type: '',
+      star_threshold_2: 70,
+      star_threshold_3: 90
     });
   };
 
@@ -205,8 +211,9 @@ function GoalsSetup({ apiUrl }) {
           target_value: nutritionTargets.calories,
           target_unit: 'cal',
           is_smart: true,
-          is_auto_tracked: true,
-          is_binary: false
+          health_metric_type: 'calories',
+          star_threshold_2: 70,
+          star_threshold_3: 90
         },
         {
           category_id: healthCategory.id,
@@ -217,8 +224,9 @@ function GoalsSetup({ apiUrl }) {
           target_value: nutritionTargets.protein,
           target_unit: 'g',
           is_smart: true,
-          is_auto_tracked: true,
-          is_binary: false
+          health_metric_type: 'protein',
+          star_threshold_2: 70,
+          star_threshold_3: 90
         },
         {
           category_id: healthCategory.id,
@@ -229,8 +237,9 @@ function GoalsSetup({ apiUrl }) {
           target_value: nutritionTargets.carbs,
           target_unit: 'g',
           is_smart: true,
-          is_auto_tracked: true,
-          is_binary: false
+          health_metric_type: 'carbs',
+          star_threshold_2: 70,
+          star_threshold_3: 90
         },
         {
           category_id: healthCategory.id,
@@ -241,8 +250,9 @@ function GoalsSetup({ apiUrl }) {
           target_value: nutritionTargets.fats,
           target_unit: 'g',
           is_smart: true,
-          is_auto_tracked: true,
-          is_binary: false
+          health_metric_type: 'fats',
+          star_threshold_2: 70,
+          star_threshold_3: 90
         }
       ];
 
@@ -274,7 +284,10 @@ function GoalsSetup({ apiUrl }) {
       timeframe_end: goal.timeframe_end ? goal.timeframe_end.split('T')[0] : '',
       target_value: goal.target_value || '',
       target_unit: goal.target_unit || '',
-      is_smart: goal.is_smart
+      is_smart: goal.is_smart,
+      health_metric_type: goal.health_metric_type || '',
+      star_threshold_2: goal.star_threshold_2 || 70,
+      star_threshold_3: goal.star_threshold_3 || 90
     });
   };
 
@@ -349,11 +362,15 @@ function GoalsSetup({ apiUrl }) {
   };
 
   const getStarRating = (goal) => {
-    if (!goal.target_value || !goal.is_auto_tracked) return null;
+    if (!goal.target_value || !goal.health_metric_type) return null;
 
     const achievementData = achievements[goal.id];
     if (!achievementData) return null;
 
+    // Use stars from achievement data if available
+    if (achievementData.stars) return achievementData.stars;
+
+    // Fallback to percentage calculation
     const percentage = achievementData.percentage;
     const threshold2 = goal.star_threshold_2 || 70;
     const threshold3 = goal.star_threshold_3 || 90;
@@ -450,6 +467,18 @@ function GoalsSetup({ apiUrl }) {
                   {goal.category_name && (
                     <span className="goal-meta-item">{goal.category_name}</span>
                   )}
+                  {goal.health_metric_type && (
+                    <span className="goal-meta-item" style={{
+                      background: '#ecfdf5',
+                      color: '#059669',
+                      padding: '2px 6px',
+                      borderRadius: '0.25rem',
+                      fontSize: '11px',
+                      textTransform: 'capitalize'
+                    }}>
+                      {goal.health_metric_type}
+                    </span>
+                  )}
                   {goal.timeframe_end && (
                     <span className="goal-meta-item">
                       <Calendar size={12} /> Due: {new Date(goal.timeframe_end).toLocaleDateString()}
@@ -458,6 +487,18 @@ function GoalsSetup({ apiUrl }) {
                   {goal.target_value && (
                     <span className="goal-meta-item">
                       Target: {goal.target_value}{goal.target_unit}
+                    </span>
+                  )}
+                  {goal.current_streak > 0 && (
+                    <span className="goal-meta-item" style={{
+                      background: '#fef3c7',
+                      color: '#92400e',
+                      padding: '2px 6px',
+                      borderRadius: '0.25rem',
+                      fontSize: '11px',
+                      fontWeight: 600
+                    }}>
+                      🔥 {goal.current_streak} day streak
                     </span>
                   )}
                   {goal.is_smart && (
@@ -762,6 +803,30 @@ function GoalsSetup({ apiUrl }) {
                 </div>
               </div>
 
+              {(formData.goal_type === 'daily' || formData.goal_type === 'weekly') && (
+                <div className="form-group">
+                  <label>Health Metric to Track</label>
+                  <select
+                    value={formData.health_metric_type}
+                    onChange={(e) => setFormData({ ...formData, health_metric_type: e.target.value })}
+                  >
+                    <option value="">None (manual tracking)</option>
+                    <option value="calories">Calories</option>
+                    <option value="protein">Protein</option>
+                    <option value="carbs">Carbohydrates</option>
+                    <option value="fats">Fats</option>
+                    <option value="water">Water (ml)</option>
+                    <option value="caffeine">Caffeine (mg)</option>
+                    <option value="steps">Steps</option>
+                    <option value="sleep">Sleep (hours)</option>
+                    <option value="cardio">Cardio (km)</option>
+                  </select>
+                  <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    Link this goal to a health metric for automatic achievement tracking
+                  </small>
+                </div>
+              )}
+
               <div className="form-group">
                 <label>Title</label>
                 <input
@@ -829,6 +894,37 @@ function GoalsSetup({ apiUrl }) {
                   </small>
                 </div>
               </div>
+
+              {(formData.goal_type === 'daily' || formData.goal_type === 'weekly') && formData.health_metric_type && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>2 Star Threshold (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.star_threshold_2}
+                      onChange={(e) => setFormData({ ...formData, star_threshold_2: parseInt(e.target.value) })}
+                    />
+                    <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      Default: 70% (good achievement)
+                    </small>
+                  </div>
+                  <div className="form-group">
+                    <label>3 Star Threshold (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.star_threshold_3}
+                      onChange={(e) => setFormData({ ...formData, star_threshold_3: parseInt(e.target.value) })}
+                    />
+                    <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      Default: 90% (excellent achievement)
+                    </small>
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
