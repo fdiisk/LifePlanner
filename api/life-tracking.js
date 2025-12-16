@@ -2,6 +2,16 @@ import { getDb } from '../lib/db.js';
 import { dummyCategories, dummyGoals, dummyHabits, dummyDailyTracking } from '../lib/dummyData.js';
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   const sql = getDb();
   const { resource } = req.query; // categories, goals, habits, tracking
 
@@ -789,55 +799,60 @@ export default async function handler(req, res) {
 
           // Store achievement in database if not calculate_only
           if (calculate_only !== 'true') {
-            await sql`
-              INSERT INTO goal_achievements (goal_id, date, achieved_value, target_value, percentage, stars)
-              VALUES (${goal.id}, ${targetDate}, ${achieved}, ${target}, ${percentage}, ${stars})
-              ON CONFLICT (goal_id, date)
-              DO UPDATE SET
-                achieved_value = ${achieved},
-                target_value = ${target},
-                percentage = ${percentage},
-                stars = ${stars}
-            `;
-
-            // Update streak if 3 stars achieved
-            if (stars === 3) {
-              // Get yesterday's achievement
-              const yesterday = new Date(targetDate);
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-              const yesterdayAchievement = await sql`
-                SELECT stars FROM goal_achievements
-                WHERE goal_id = ${goal.id}
-                AND date = ${yesterdayStr}
+            try {
+              await sql`
+                INSERT INTO goal_achievements (goal_id, date, achieved_value, target_value, percentage, stars)
+                VALUES (${goal.id}, ${targetDate}, ${achieved}, ${target}, ${percentage}, ${stars})
+                ON CONFLICT (goal_id, date)
+                DO UPDATE SET
+                  achieved_value = ${achieved},
+                  target_value = ${target},
+                  percentage = ${percentage},
+                  stars = ${stars}
               `;
 
-              let newStreak = 1;
-              if (yesterdayAchievement.length > 0 && yesterdayAchievement[0].stars === 3) {
-                // Continue streak
-                const currentGoal = await sql`
-                  SELECT current_streak, best_streak FROM goals
+              // Update streak if 3 stars achieved
+              if (stars === 3) {
+                // Get yesterday's achievement
+                const yesterday = new Date(targetDate);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+                const yesterdayAchievement = await sql`
+                  SELECT stars FROM goal_achievements
+                  WHERE goal_id = ${goal.id}
+                  AND date = ${yesterdayStr}
+                `;
+
+                let newStreak = 1;
+                if (yesterdayAchievement.length > 0 && yesterdayAchievement[0].stars === 3) {
+                  // Continue streak
+                  const currentGoal = await sql`
+                    SELECT current_streak, best_streak FROM goals
+                    WHERE id = ${goal.id}
+                  `;
+                  newStreak = (currentGoal[0].current_streak || 0) + 1;
+                }
+
+                // Update goal streaks
+                const bestStreak = Math.max(newStreak, goal.best_streak || 0);
+                await sql`
+                  UPDATE goals
+                  SET current_streak = ${newStreak},
+                      best_streak = ${bestStreak}
                   WHERE id = ${goal.id}
                 `;
-                newStreak = (currentGoal[0].current_streak || 0) + 1;
+              } else {
+                // Reset streak if not 3 stars
+                await sql`
+                  UPDATE goals
+                  SET current_streak = 0
+                  WHERE id = ${goal.id}
+                `;
               }
-
-              // Update goal streaks
-              const bestStreak = Math.max(newStreak, goal.best_streak || 0);
-              await sql`
-                UPDATE goals
-                SET current_streak = ${newStreak},
-                    best_streak = ${bestStreak}
-                WHERE id = ${goal.id}
-              `;
-            } else {
-              // Reset streak if not 3 stars
-              await sql`
-                UPDATE goals
-                SET current_streak = 0
-                WHERE id = ${goal.id}
-              `;
+            } catch (dbError) {
+              // Table might not exist yet, log but continue
+              console.error('Error storing achievement (table may not exist):', dbError.message);
             }
           }
         }
@@ -903,23 +918,27 @@ export default async function handler(req, res) {
         // Count goals achieved (3 stars at least once this week)
         const goalsAchieved = achievements.filter(ach => ach.stars === 3).length;
 
-        // Store or update weekly summary
-        await sql`
-          INSERT INTO weekly_summary (
-            week_start_date, week_end_date, overall_score,
-            total_goals_tracked, goals_achieved, average_stars
-          )
-          VALUES (
-            ${weekStartStr}, ${weekEndStr}, ${overallScore},
-            ${achievements.length}, ${goalsAchieved}, ${avgStars}
-          )
-          ON CONFLICT (week_start_date)
-          DO UPDATE SET
-            overall_score = ${overallScore},
-            total_goals_tracked = ${achievements.length},
-            goals_achieved = ${goalsAchieved},
-            average_stars = ${avgStars}
-        `;
+        // Store or update weekly summary (if table exists)
+        try {
+          await sql`
+            INSERT INTO weekly_summary (
+              week_start_date, week_end_date, overall_score,
+              total_goals_tracked, goals_achieved, average_stars
+            )
+            VALUES (
+              ${weekStartStr}, ${weekEndStr}, ${overallScore},
+              ${achievements.length}, ${goalsAchieved}, ${avgStars}
+            )
+            ON CONFLICT (week_start_date)
+            DO UPDATE SET
+              overall_score = ${overallScore},
+              total_goals_tracked = ${achievements.length},
+              goals_achieved = ${goalsAchieved},
+              average_stars = ${avgStars}
+          `;
+        } catch (dbError) {
+          console.error('Error storing weekly summary (table may not exist):', dbError.message);
+        }
 
         return res.status(200).json({
           weekStart: weekStartStr,

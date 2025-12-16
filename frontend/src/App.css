@@ -174,17 +174,16 @@ h3 {
   }
 }
 
-/* Container - more compact */
+/* Container - full width with padding */
 .container {
   max-width: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 16px;
   flex: 1;
 }
 
 @media (min-width: 1024px) {
   .container {
-    max-width: 1600px;
     padding: 16px 20px;
   }
 }
