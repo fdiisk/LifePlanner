@@ -638,15 +638,16 @@ export default async function handler(req, res) {
   if (resource === 'goal-achievements') {
     if (req.method === 'GET') {
       try {
-        const { date } = req.query;
+        const { date, calculate_only } = req.query;
         const targetDate = date || new Date().toISOString().split('T')[0];
 
-        // Fetch all daily goals
+        // Fetch all active daily goals
         const dailyGoals = await sql`
           SELECT * FROM goals
           WHERE goal_type = 'daily'
-          AND is_auto_tracked = true
           AND status = 'active'
+          AND target_value IS NOT NULL
+          AND target_value > 0
         `;
 
         // Fetch pending logs for the date
@@ -656,7 +657,7 @@ export default async function handler(req, res) {
           AND compiled = false
         `;
 
-        // Fetch compiled stats
+        // Fetch compiled food stats
         const compiledStats = await sql`
           SELECT SUM(calories) as total_calories,
                  SUM(protein) as total_protein,
@@ -669,46 +670,177 @@ export default async function handler(req, res) {
         // Calculate achievements for each goal
         const achievements = {};
 
-        dailyGoals.forEach(goal => {
-          const title = goal.title.toLowerCase();
+        for (const goal of dailyGoals) {
           let achieved = 0;
-          let target = parseFloat(goal.target_value) || 0;
+          const target = parseFloat(goal.target_value) || 0;
+          const metricType = goal.health_metric_type;
 
           if (target === 0) {
-            achievements[goal.id] = { percentage: 0, achieved: 0, target: 0 };
-            return;
+            achievements[goal.id] = {
+              percentage: 0,
+              achieved: 0,
+              target: 0,
+              stars: 1,
+              metricType: metricType
+            };
+            continue;
           }
 
-          // Check compiled stats first
-          if (compiledStats.length > 0 && compiledStats[0].total_calories) {
-            const stats = compiledStats[0];
-            if (title.includes('calorie')) achieved = parseFloat(stats.total_calories) || 0;
-            else if (title.includes('protein')) achieved = parseFloat(stats.total_protein) || 0;
-            else if (title.includes('carb')) achieved = parseFloat(stats.total_carbs) || 0;
-            else if (title.includes('fat')) achieved = parseFloat(stats.total_fats) || 0;
-          } else {
-            // Fall back to pending logs
+          // Calculate based on health_metric_type
+          if (metricType === 'calories' || metricType === 'protein' ||
+              metricType === 'carbs' || metricType === 'fats') {
+            // Check compiled stats first
+            if (compiledStats.length > 0 && compiledStats[0].total_calories) {
+              const stats = compiledStats[0];
+              if (metricType === 'calories') achieved = parseFloat(stats.total_calories) || 0;
+              else if (metricType === 'protein') achieved = parseFloat(stats.total_protein) || 0;
+              else if (metricType === 'carbs') achieved = parseFloat(stats.total_carbs) || 0;
+              else if (metricType === 'fats') achieved = parseFloat(stats.total_fats) || 0;
+            } else {
+              // Fall back to pending logs
+              pendingLogs.forEach(log => {
+                if (log.category === 'food') {
+                  const parsedData = typeof log.parsed_data === 'string'
+                    ? JSON.parse(log.parsed_data)
+                    : log.parsed_data;
+
+                  if (parsedData && parsedData.items) {
+                    parsedData.items.forEach(item => {
+                      if (metricType === 'calories') achieved += item.calories || 0;
+                      else if (metricType === 'protein') achieved += item.protein || 0;
+                      else if (metricType === 'carbs') achieved += item.carbs || 0;
+                      else if (metricType === 'fats') achieved += item.fats || 0;
+                    });
+                  }
+                }
+              });
+            }
+          } else if (metricType === 'water') {
+            // Sum water from pending logs
             pendingLogs.forEach(log => {
-              if (log.category === 'food') {
+              if (log.category === 'water') {
                 const parsedData = typeof log.parsed_data === 'string'
                   ? JSON.parse(log.parsed_data)
                   : log.parsed_data;
-
-                if (parsedData && parsedData.items) {
-                  parsedData.items.forEach(item => {
-                    if (title.includes('calorie')) achieved += item.calories || 0;
-                    else if (title.includes('protein')) achieved += item.protein || 0;
-                    else if (title.includes('carb')) achieved += item.carbs || 0;
-                    else if (title.includes('fat')) achieved += item.fats || 0;
-                  });
-                }
+                achieved += parsedData?.amount_ml || 0;
+              }
+            });
+          } else if (metricType === 'caffeine') {
+            // Sum caffeine from pending logs
+            pendingLogs.forEach(log => {
+              if (log.category === 'caffeine') {
+                const parsedData = typeof log.parsed_data === 'string'
+                  ? JSON.parse(log.parsed_data)
+                  : log.parsed_data;
+                achieved += parsedData?.caffeine_mg || 0;
+              }
+            });
+          } else if (metricType === 'steps') {
+            // Sum steps from pending logs
+            pendingLogs.forEach(log => {
+              if (log.category === 'steps') {
+                const parsedData = typeof log.parsed_data === 'string'
+                  ? JSON.parse(log.parsed_data)
+                  : log.parsed_data;
+                achieved += parsedData?.total_steps || 0;
+              }
+            });
+          } else if (metricType === 'sleep') {
+            // Sum sleep hours from pending logs
+            pendingLogs.forEach(log => {
+              if (log.category === 'sleep') {
+                const parsedData = typeof log.parsed_data === 'string'
+                  ? JSON.parse(log.parsed_data)
+                  : log.parsed_data;
+                achieved += parsedData?.duration_hours || 0;
+              }
+            });
+          } else if (metricType === 'cardio') {
+            // Sum cardio distance from pending logs
+            pendingLogs.forEach(log => {
+              if (log.category === 'cardio') {
+                const parsedData = typeof log.parsed_data === 'string'
+                  ? JSON.parse(log.parsed_data)
+                  : log.parsed_data;
+                achieved += parsedData?.distance_km || 0;
               }
             });
           }
 
           const percentage = Math.round((achieved / target) * 100);
-          achievements[goal.id] = { percentage, achieved: Math.round(achieved), target };
-        });
+
+          // Calculate stars based on percentage thresholds
+          let stars = 1;
+          if (percentage >= (goal.star_threshold_3 || 90)) {
+            stars = 3;
+          } else if (percentage >= (goal.star_threshold_2 || 70)) {
+            stars = 2;
+          }
+
+          achievements[goal.id] = {
+            percentage,
+            achieved: Math.round(achieved * 10) / 10,
+            target,
+            stars,
+            metricType: metricType,
+            threshold2: goal.star_threshold_2 || 70,
+            threshold3: goal.star_threshold_3 || 90
+          };
+
+          // Store achievement in database if not calculate_only
+          if (calculate_only !== 'true') {
+            await sql`
+              INSERT INTO goal_achievements (goal_id, date, achieved_value, target_value, percentage, stars)
+              VALUES (${goal.id}, ${targetDate}, ${achieved}, ${target}, ${percentage}, ${stars})
+              ON CONFLICT (goal_id, date)
+              DO UPDATE SET
+                achieved_value = ${achieved},
+                target_value = ${target},
+                percentage = ${percentage},
+                stars = ${stars}
+            `;
+
+            // Update streak if 3 stars achieved
+            if (stars === 3) {
+              // Get yesterday's achievement
+              const yesterday = new Date(targetDate);
+              yesterday.setDate(yesterday.getDate() - 1);
+              const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+              const yesterdayAchievement = await sql`
+                SELECT stars FROM goal_achievements
+                WHERE goal_id = ${goal.id}
+                AND date = ${yesterdayStr}
+              `;
+
+              let newStreak = 1;
+              if (yesterdayAchievement.length > 0 && yesterdayAchievement[0].stars === 3) {
+                // Continue streak
+                const currentGoal = await sql`
+                  SELECT current_streak, best_streak FROM goals
+                  WHERE id = ${goal.id}
+                `;
+                newStreak = (currentGoal[0].current_streak || 0) + 1;
+              }
+
+              // Update goal streaks
+              const bestStreak = Math.max(newStreak, goal.best_streak || 0);
+              await sql`
+                UPDATE goals
+                SET current_streak = ${newStreak},
+                    best_streak = ${bestStreak}
+                WHERE id = ${goal.id}
+              `;
+            } else {
+              // Reset streak if not 3 stars
+              await sql`
+                UPDATE goals
+                SET current_streak = 0
+                WHERE id = ${goal.id}
+              `;
+            }
+          }
+        }
 
         return res.status(200).json({ achievements, date: targetDate });
       } catch (error) {
@@ -718,7 +850,95 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ error: 'Invalid resource. Use: categories, goal-groups, goals, habits, tracking, settings, or goal-achievements' });
+  // ===================
+  // WEEKLY SUMMARY
+  // ===================
+  if (resource === 'weekly-summary') {
+    if (req.method === 'GET') {
+      try {
+        const { date } = req.query;
+        const targetDate = date || new Date().toISOString().split('T')[0];
+
+        // Calculate week start (Monday) and end (Sunday)
+        const dateObj = new Date(targetDate);
+        const dayOfWeek = dateObj.getDay();
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        const weekStart = new Date(dateObj);
+        weekStart.setDate(dateObj.getDate() + diffToMonday);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+
+        const weekStartStr = weekStart.toISOString().split('T')[0];
+        const weekEndStr = weekEnd.toISOString().split('T')[0];
+
+        // Fetch all daily achievements for the week
+        const achievements = await sql`
+          SELECT ga.*, g.category_id, g.title
+          FROM goal_achievements ga
+          JOIN goals g ON ga.goal_id = g.id
+          WHERE ga.date >= ${weekStartStr}
+          AND ga.date <= ${weekEndStr}
+          ORDER BY ga.date ASC
+        `;
+
+        // Group by category and calculate averages
+        const categoryScores = {};
+        const categoryGoalCounts = {};
+
+        achievements.forEach(ach => {
+          const catId = ach.category_id || 'uncategorized';
+          if (!categoryScores[catId]) {
+            categoryScores[catId] = { totalStars: 0, count: 0, goalIds: new Set() };
+          }
+          categoryScores[catId].totalStars += ach.stars;
+          categoryScores[catId].count += 1;
+          categoryScores[catId].goalIds.add(ach.goal_id);
+        });
+
+        // Calculate overall score (average of all stars normalized to 0-100)
+        const totalStars = achievements.reduce((sum, ach) => sum + ach.stars, 0);
+        const avgStars = achievements.length > 0 ? totalStars / achievements.length : 0;
+        const overallScore = Math.round((avgStars / 3) * 100);
+
+        // Count goals achieved (3 stars at least once this week)
+        const goalsAchieved = achievements.filter(ach => ach.stars === 3).length;
+
+        // Store or update weekly summary
+        await sql`
+          INSERT INTO weekly_summary (
+            week_start_date, week_end_date, overall_score,
+            total_goals_tracked, goals_achieved, average_stars
+          )
+          VALUES (
+            ${weekStartStr}, ${weekEndStr}, ${overallScore},
+            ${achievements.length}, ${goalsAchieved}, ${avgStars}
+          )
+          ON CONFLICT (week_start_date)
+          DO UPDATE SET
+            overall_score = ${overallScore},
+            total_goals_tracked = ${achievements.length},
+            goals_achieved = ${goalsAchieved},
+            average_stars = ${avgStars}
+        `;
+
+        return res.status(200).json({
+          weekStart: weekStartStr,
+          weekEnd: weekEndStr,
+          overallScore,
+          averageStars: avgStars,
+          totalAchievements: achievements.length,
+          goalsAchieved,
+          categoryScores,
+          dailyBreakdown: achievements
+        });
+      } catch (error) {
+        console.error('Error calculating weekly summary:', error);
+        return res.status(500).json({ error: 'Failed to calculate weekly summary' });
+      }
+    }
+  }
+
+  return res.status(400).json({ error: 'Invalid resource. Use: categories, goal-groups, goals, habits, tracking, settings, goal-achievements, or weekly-summary' });
 }
 
 // Helper function to build hierarchical goal structure

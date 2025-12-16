@@ -115,13 +115,16 @@ CREATE TABLE IF NOT EXISTS goals (
   target_value FLOAT,
   target_unit VARCHAR(50),
   is_smart BOOLEAN DEFAULT FALSE, -- Specific, Measurable, Achievable, Relevant, Time-bound
-  is_binary BOOLEAN DEFAULT FALSE, -- TRUE for yes/no goals (drink 3L water), FALSE for numeric goals
+  is_binary BOOLEAN DEFAULT FALSE, -- DEPRECATED: All goals now use 1/3 star rating
   is_auto_tracked BOOLEAN DEFAULT FALSE, -- TRUE if automatically populated from health logs
+  health_metric_type VARCHAR(50), -- Health metric tracked: calories, protein, carbs, fats, water, caffeine, steps, sleep, cardio
   star_threshold_2 INTEGER DEFAULT 70, -- Percentage for 2 stars (good achievement)
   star_threshold_3 INTEGER DEFAULT 90, -- Percentage for 3 stars (excellent achievement)
+  current_streak INTEGER DEFAULT 0, -- Consecutive days achieving 3 stars
+  best_streak INTEGER DEFAULT 0, -- Longest streak ever achieved
   smart_details JSONB, -- Store SMART breakdown
   calculation_formula TEXT, -- For auto-calculations (e.g., calorie deficit)
-  linked_health_metrics JSONB, -- Links to health data (e.g., macros, workouts)
+  linked_health_metrics JSONB, -- DEPRECATED: Use health_metric_type instead
   status VARCHAR(20) DEFAULT 'active', -- active, completed, paused, cancelled
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -181,4 +184,38 @@ CREATE TABLE IF NOT EXISTS user_settings (
   daily_fats_target INTEGER DEFAULT 65,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Goal achievements for persistent tracking
+CREATE TABLE IF NOT EXISTS goal_achievements (
+  id SERIAL PRIMARY KEY,
+  goal_id INTEGER REFERENCES goals(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  achieved_value FLOAT NOT NULL,
+  target_value FLOAT NOT NULL,
+  percentage INTEGER NOT NULL,
+  stars INTEGER CHECK (stars IN (1, 2, 3)),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(goal_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_goal_achievements_date ON goal_achievements(date);
+CREATE INDEX IF NOT EXISTS idx_goal_achievements_goal_id ON goal_achievements(goal_id);
+
+-- Weekly summary for goal aggregation
+CREATE TABLE IF NOT EXISTS weekly_summary (
+  id SERIAL PRIMARY KEY,
+  week_start_date DATE NOT NULL UNIQUE,
+  week_end_date DATE NOT NULL,
+  overall_score FLOAT,
+  health_score FLOAT,
+  career_score FLOAT,
+  relationships_score FLOAT,
+  hobbies_score FLOAT,
+  total_goals_tracked INTEGER,
+  goals_achieved INTEGER,
+  average_stars FLOAT,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
 );

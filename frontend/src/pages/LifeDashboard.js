@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Droplets, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { Activity, Droplets, TrendingUp, AlertCircle, CheckCircle, Star, Target } from 'lucide-react';
 
 function LifeDashboard({ apiUrl }) {
   const [loading, setLoading] = useState(true);
@@ -7,6 +7,8 @@ function LifeDashboard({ apiUrl }) {
   const [compiledStats, setCompiledStats] = useState(null);
   const [settings, setSettings] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [goals, setGoals] = useState([]);
+  const [achievements, setAchievements] = useState({});
 
   const extractNutritionTargets = (goals) => {
     // Extract nutrition targets from daily goals
@@ -37,18 +39,20 @@ function LifeDashboard({ apiUrl }) {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch pending logs, compiled stats, goals, and settings in parallel
-      const [pendingRes, foodRes, goalsRes, settingsRes] = await Promise.all([
+      // Fetch pending logs, compiled stats, goals, settings, and achievements in parallel
+      const [pendingRes, foodRes, goalsRes, settingsRes, achievementsRes] = await Promise.all([
         fetch(`${apiUrl}/pending-log?date=${selectedDate}`),
         fetch(`${apiUrl}/food-stats?date=${selectedDate}`),
         fetch(`${apiUrl}/life-tracking?resource=goals`),
-        fetch(`${apiUrl}/life-tracking?resource=settings`)
+        fetch(`${apiUrl}/life-tracking?resource=settings`),
+        fetch(`${apiUrl}/life-tracking?resource=goal-achievements&date=${selectedDate}`)
       ]);
 
       const pendingData = await pendingRes.json();
       const foodData = await foodRes.json();
       const goalsData = await goalsRes.json();
       const settingsData = await settingsRes.json();
+      const achievementsData = await achievementsRes.json();
 
       // Flatten the grouped logs into a single array
       const allLogs = [];
@@ -64,6 +68,22 @@ function LifeDashboard({ apiUrl }) {
       }
       setPendingLogs(allLogs);
       setCompiledStats(foodData);
+
+      // Flatten goals for display
+      const flattenGoals = (goalsList) => {
+        let flat = [];
+        goalsList.forEach(goal => {
+          flat.push(goal);
+          if (goal.children && goal.children.length > 0) {
+            flat = flat.concat(flattenGoals(goal.children));
+          }
+        });
+        return flat;
+      };
+      const allGoals = flattenGoals(goalsData.goals || []);
+      const dailyGoals = allGoals.filter(g => g.goal_type === 'daily' && g.health_metric_type && g.target_value);
+      setGoals(dailyGoals);
+      setAchievements(achievementsData.achievements || {});
 
       // Extract nutrition targets from goals (priority) or use settings (fallback)
       const goalTargets = extractNutritionTargets(goalsData.goals || []);
@@ -233,6 +253,68 @@ function LifeDashboard({ apiUrl }) {
           </>
         )}
       </div>
+
+      {goals.length > 0 && (
+        <div className="stat-card" style={{ marginBottom: '24px' }}>
+          <h3><Target size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Daily Goals Progress</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {goals.map(goal => {
+              const achievement = achievements[goal.id];
+              if (!achievement) return null;
+
+              const stars = achievement.stars || 1;
+              const percentage = achievement.percentage || 0;
+              const achieved = achievement.achieved || 0;
+              const target = achievement.target || goal.target_value;
+
+              return (
+                <div key={goal.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>{goal.title}</span>
+                      {goal.current_streak > 0 && (
+                        <span style={{ fontSize: '11px', color: '#92400e', background: '#fef3c7', padding: '1px 4px', borderRadius: '0.25rem' }}>
+                          🔥 {goal.current_streak}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                        {achieved}/{target}{goal.target_unit} ({percentage}%)
+                      </span>
+                      <div style={{ display: 'flex', gap: '2px' }}>
+                        {[1, 2, 3].map(i => (
+                          <Star
+                            key={i}
+                            size={14}
+                            fill={i <= stars ? '#fbbf24' : 'none'}
+                            stroke={i <= stars ? '#fbbf24' : '#d1d5db'}
+                            strokeWidth={1.5}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: '4px',
+                    background: '#e5e7eb',
+                    borderRadius: '2px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min(percentage, 100)}%`,
+                      height: '100%',
+                      background: stars === 3 ? '#10b981' : stars === 2 ? '#f59e0b' : '#ef4444',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="stats-display">
         <div className="stat-card">
