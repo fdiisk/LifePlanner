@@ -98,7 +98,6 @@ function SavedMeals({ apiUrl, onLoadMeal }) {
   return (
     <div className="saved-meals">
       <div className="saved-meals-header">
-        <h2>📖 Saved Meals</h2>
         <input
           type="text"
           placeholder="Search meals..."
@@ -168,7 +167,7 @@ function SavedMeals({ apiUrl, onLoadMeal }) {
                   className="btn-delete-meal"
                   onClick={() => handleDeleteMeal(meal)}
                 >
-                  🗑️
+                  Delete
                 </button>
               </div>
             </div>

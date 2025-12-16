@@ -208,7 +208,6 @@ function LifeDashboard({ apiUrl }) {
   return (
     <div className="life-dashboard">
       <div className="dashboard-header">
-        <h2>Daily Health Overview</h2>
         <div className="date-selector">
           <button className="date-nav" onClick={() => changeDate(-1)}>←</button>
           <input

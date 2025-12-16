@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Crosshair, Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity, Star } from 'lucide-react';
 
 function GoalsSetup({ apiUrl }) {
   const [goals, setGoals] = useState([]);
@@ -511,7 +511,7 @@ function GoalsSetup({ apiUrl }) {
     return (
       <div className="goals-setup">
         <div style={{ textAlign: 'center', padding: '48px' }}>
-          <Crosshair className="spinner" size={32} />
+          <Target className="spinner" size={32} />
           <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading goals...</p>
         </div>
       </div>
@@ -521,7 +521,6 @@ function GoalsSetup({ apiUrl }) {
   return (
     <div className="goals-setup">
       <div className="goals-header">
-        <h2><Crosshair size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Goals Setup</h2>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button className="btn-secondary" style={{ width: 'auto' }} onClick={() => setShowNutritionSetup(true)}>
             <Activity size={16} /> Set Nutrition Goals
@@ -565,7 +564,7 @@ function GoalsSetup({ apiUrl }) {
 
       {goals.length === 0 ? (
         <div className="empty-state">
-          <Crosshair size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
+          <Target size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
           <p>No goals yet. Set your nutrition goals or create a custom goal!</p>
         </div>
       ) : (

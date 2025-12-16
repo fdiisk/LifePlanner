@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Save, X, Edit, CheckCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Save, X, Edit, CheckCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 
 const STORAGE_KEY = 'lifeplanner_dev_notes';
 
@@ -214,7 +214,6 @@ function DevelopmentNotes() {
     return (
       <div className="development-notes">
         <div className="dev-notes-header">
-          <h2><FileText size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Development Notes</h2>
           <div className="dev-notes-actions">
             <button className="btn-save" onClick={handleToggleEditMode}>
               <Save size={16} />
@@ -249,7 +248,6 @@ function DevelopmentNotes() {
   return (
     <div className="development-notes">
       <div className="dev-notes-header">
-        <h2><FileText size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Development Notes</h2>
         <div className="dev-notes-actions">
           <button className="btn-edit-mode" onClick={handleToggleEditMode}>
             <Edit size={16} />
