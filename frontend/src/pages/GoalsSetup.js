@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Target, Calendar, CheckCircle, Activity, Star } from 'lucide-react';
+import MilestoneManager from '../components/MilestoneManager';
+import DailyChecklist from '../components/DailyChecklist';
+import ContributionEditor from '../components/ContributionEditor';
+import WeightDistributionChart from '../components/WeightDistributionChart';
 
 function GoalsSetup({ apiUrl }) {
   const [goals, setGoals] = useState([]);
@@ -538,9 +542,58 @@ function GoalsSetup({ apiUrl }) {
             </div>
           </div>
 
-          {expandedGoals[goal.id] && goal.children && goal.children.length > 0 && (
-            <div className="goal-children">
-              {renderGoalTree(goal.children, level + 1, renderedGroups)}
+          {expandedGoals[goal.id] && (
+            <div style={{ marginTop: '16px', marginLeft: '32px' }}>
+              {/* Milestones Section - for goals that can have milestones */}
+              {['high_level', 'yearly', 'quarterly', 'monthly'].includes(goal.goal_type) && (
+                <div style={{ marginBottom: '16px', paddingLeft: '12px', borderLeft: '2px solid var(--border-light)' }}>
+                  <MilestoneManager
+                    goalId={goal.id}
+                    apiUrl={apiUrl}
+                    onUpdate={fetchData}
+                  />
+                </div>
+              )}
+
+              {/* Contributions Editor - for goals that can have child goals */}
+              {['high_level', 'yearly', 'quarterly', 'monthly', 'weekly'].includes(goal.goal_type) && (
+                <div style={{ marginBottom: '16px', paddingLeft: '12px', borderLeft: '2px solid var(--border-light)' }}>
+                  <ContributionEditor
+                    goalId={goal.id}
+                    apiUrl={apiUrl}
+                    onUpdate={fetchData}
+                  />
+                </div>
+              )}
+
+              {/* Weight Distribution Chart - visualize contributions + milestones */}
+              {['high_level', 'yearly', 'quarterly', 'monthly'].includes(goal.goal_type) && (
+                <div style={{ marginBottom: '16px', paddingLeft: '12px', borderLeft: '2px solid var(--border-light)' }}>
+                  <WeightDistributionChart
+                    goalId={goal.id}
+                    apiUrl={apiUrl}
+                  />
+                </div>
+              )}
+
+              {/* Daily Checklist - for qualitative daily goals */}
+              {goal.goal_type === 'daily' && goal.is_qualitative && (
+                <div style={{ marginBottom: '16px', paddingLeft: '12px', borderLeft: '2px solid var(--border-light)' }}>
+                  <DailyChecklist
+                    goalId={goal.id}
+                    date={new Date().toISOString().split('T')[0]}
+                    apiUrl={apiUrl}
+                    onProgressUpdate={fetchData}
+                  />
+                </div>
+              )}
+
+              {/* Child Goals */}
+              {goal.children && goal.children.length > 0 && (
+                <div className="goal-children">
+                  {renderGoalTree(goal.children, level + 1, renderedGroups)}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { Target, LayoutDashboard, CheckSquare, Crosshair, Utensils, Settings as SettingsIcon, FileText, LogOut, Menu, X } from 'lucide-react';
+import { Target, LayoutDashboard, CheckSquare, Crosshair, Utensils, Settings as SettingsIcon, FileText, LogOut, Menu, X, BarChart3 } from 'lucide-react';
 import Login from './components/Login';
 import Track from './pages/Track';
 import Notes from './pages/Notes';
 import LifeDashboard from './pages/LifeDashboard';
 import Tracking from './pages/Tracking';
 import GoalsSetup from './pages/GoalsSetup';
+import GoalsVisualization from './pages/GoalsVisualization';
 import Settings from './pages/Settings';
 import DevelopmentNotes from './pages/DevelopmentNotes';
 import StatsDisplay from './components/StatsDisplay';
@@ -125,6 +126,13 @@ function App() {
             Goals Setup
           </button>
           <button
+            className={currentPage === 'analytics' ? 'active' : ''}
+            onClick={() => handleNavigation('analytics')}
+          >
+            <BarChart3 size={16} />
+            Analytics
+          </button>
+          <button
             className={currentPage === 'meals' ? 'active' : ''}
             onClick={() => handleNavigation('meals')}
           >
@@ -163,6 +171,10 @@ function App() {
 
         {currentPage === 'goals' && (
           <GoalsSetup apiUrl={API_URL} />
+        )}
+
+        {currentPage === 'analytics' && (
+          <GoalsVisualization apiUrl={API_URL} />
         )}
 
         {currentPage === 'meals' && (

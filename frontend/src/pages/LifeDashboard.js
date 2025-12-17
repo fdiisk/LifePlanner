@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Droplets, TrendingUp, Star, Target } from 'lucide-react';
+import { Activity, Droplets, TrendingUp, Star, Target, BarChart3, LineChart as LineChartIcon, CheckSquare, Square, Calendar as CalendarIcon } from 'lucide-react';
+import { BarChart, LineChart, ProgressRing, TrendIndicator } from '../components/Charts';
 
 function LifeDashboard({ apiUrl }) {
   const [loading, setLoading] = useState(true);
@@ -9,6 +10,133 @@ function LifeDashboard({ apiUrl }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [goals, setGoals] = useState([]);
   const [achievements, setAchievements] = useState({});
+  const [timeframe, setTimeframe] = useState('today'); // today, yesterday, week, month, quarter, year
+  const [historicalData, setHistoricalData] = useState(null);
+  const [dailyChecklists, setDailyChecklists] = useState([]);
+  const [activeMilestones, setActiveMilestones] = useState([]);
+
+  // Fetch historical data when timeframe changes
+  useEffect(() => {
+    if (timeframe !== 'today') {
+      fetchHistoricalData();
+    }
+  }, [timeframe, selectedDate]);
+
+  const fetchHistoricalData = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/historical-stats?timeframe=${timeframe}&endDate=${selectedDate}`);
+      const data = await response.json();
+      setHistoricalData(data);
+    } catch (error) {
+      console.error('Error fetching historical data:', error);
+    }
+  };
+
+  const fetchDailyChecklists = async (goals) => {
+    try {
+      // Find all daily qualitative goals
+      const flattenGoals = (goalsList) => {
+        let flat = [];
+        goalsList.forEach(goal => {
+          flat.push(goal);
+          if (goal.children && goal.children.length > 0) {
+            flat = flat.concat(flattenGoals(goal.children));
+          }
+        });
+        return flat;
+      };
+
+      const allGoals = flattenGoals(goals);
+      const qualitativeDaily = allGoals.filter(g => g.goal_type === 'daily' && g.is_qualitative);
+
+      // Fetch checklist items for each qualitative goal
+      const checklistPromises = qualitativeDaily.map(async (goal) => {
+        try {
+          const response = await fetch(
+            `${apiUrl}/unified-goals?resource=daily-checklist&goal_id=${goal.id}&date=${selectedDate}`
+          );
+          const data = await response.json();
+          const items = data.items || [];
+
+          if (items.length > 0) {
+            const completed = items.filter(i => i.is_completed).length;
+            const percentage = (completed / items.length) * 100;
+
+            return {
+              goalId: goal.id,
+              goalTitle: goal.title,
+              items,
+              completed,
+              total: items.length,
+              percentage
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`Error fetching checklist for goal ${goal.id}:`, error);
+          return null;
+        }
+      });
+
+      const checklists = (await Promise.all(checklistPromises)).filter(c => c !== null);
+      setDailyChecklists(checklists);
+    } catch (error) {
+      console.error('Error fetching daily checklists:', error);
+    }
+  };
+
+  const fetchActiveMilestones = async (goals) => {
+    try {
+      // Find all goals that can have milestones
+      const flattenGoals = (goalsList) => {
+        let flat = [];
+        goalsList.forEach(goal => {
+          flat.push(goal);
+          if (goal.children && goal.children.length > 0) {
+            flat = flat.concat(flattenGoals(goal.children));
+          }
+        });
+        return flat;
+      };
+
+      const allGoals = flattenGoals(goals);
+      const milestonableGoals = allGoals.filter(g =>
+        ['high_level', 'yearly', 'quarterly', 'monthly'].includes(g.goal_type)
+      );
+
+      // Fetch milestones for each goal
+      const milestonePromises = milestonableGoals.map(async (goal) => {
+        try {
+          const response = await fetch(
+            `${apiUrl}/unified-goals?resource=milestones&goal_id=${goal.id}`
+          );
+          const data = await response.json();
+          const milestones = (data.milestones || []).filter(m => !m.is_completed);
+
+          return milestones.map(m => ({
+            ...m,
+            parentGoalTitle: goal.title,
+            parentGoalType: goal.goal_type
+          }));
+        } catch (error) {
+          console.error(`Error fetching milestones for goal ${goal.id}:`, error);
+          return [];
+        }
+      });
+
+      const allMilestones = (await Promise.all(milestonePromises)).flat();
+      // Sort by due date (soonest first)
+      allMilestones.sort((a, b) => {
+        if (!a.due_date && !b.due_date) return 0;
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return new Date(a.due_date) - new Date(b.due_date);
+      });
+      setActiveMilestones(allMilestones.slice(0, 5)); // Show top 5 upcoming
+    } catch (error) {
+      console.error('Error fetching active milestones:', error);
+    }
+  };
 
   const extractNutritionTargets = (goals) => {
     // Extract nutrition targets from daily goals
@@ -53,6 +181,12 @@ function LifeDashboard({ apiUrl }) {
       const goalsData = await goalsRes.json();
       const settingsData = await settingsRes.json();
       const achievementsData = await achievementsRes.json();
+
+      // Fetch daily checklists for qualitative goals
+      await fetchDailyChecklists(goalsData.goals || []);
+
+      // Fetch active milestones
+      await fetchActiveMilestones(goalsData.goals || []);
 
       // Flatten the grouped logs into a single array
       const allLogs = [];
@@ -197,6 +331,15 @@ function LifeDashboard({ apiUrl }) {
     );
   }
 
+  const timeframes = [
+    { id: 'today', label: 'Today', days: 1 },
+    { id: 'yesterday', label: 'Yesterday', days: 1 },
+    { id: 'week', label: 'Last 7 Days', days: 7 },
+    { id: 'month', label: 'Last 30 Days', days: 30 },
+    { id: 'quarter', label: 'Last Quarter', days: 90 },
+    { id: 'year', label: 'Last Year', days: 365 }
+  ];
+
   return (
     <div className="life-dashboard">
       <div className="dashboard-header">
@@ -217,6 +360,18 @@ function LifeDashboard({ apiUrl }) {
             }}
           />
           <button className="date-nav" onClick={() => changeDate(1)}>→</button>
+        </div>
+
+        <div className="timeframe-selector">
+          {timeframes.map(tf => (
+            <button
+              key={tf.id}
+              className={`btn-sm ${timeframe === tf.id ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setTimeframe(tf.id)}
+            >
+              {tf.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -266,6 +421,113 @@ function LifeDashboard({ apiUrl }) {
                   </div>
                   <div className="progress-bar-container">
                     <div className="progress-bar-fill" style={{ width: `${Math.min(percentage, 100)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Today's Checklists */}
+      {dailyChecklists.length > 0 && (
+        <div className="card mb-xl">
+          <div className="card-title">
+            <CheckSquare size={16} />
+            Today's Checklists
+          </div>
+          <div className="flex-col gap-md">
+            {dailyChecklists.map(checklist => (
+              <div key={checklist.goalId} className="goal-list-item">
+                <div className="flex-between" style={{ marginBottom: '8px' }}>
+                  <span className="goal-title-text">{checklist.goalTitle}</span>
+                  <span className="goal-meta-text">
+                    {checklist.completed}/{checklist.total} completed
+                  </span>
+                </div>
+                <div className="progress-bar-container">
+                  <div className="progress-bar-fill" style={{ width: `${checklist.percentage}%` }} />
+                </div>
+                <div style={{ marginTop: '8px', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {checklist.items.slice(0, 3).map(item => (
+                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                      {item.is_completed ? (
+                        <CheckSquare size={14} style={{ color: 'var(--accent-primary)' }} />
+                      ) : (
+                        <Square size={14} />
+                      )}
+                      <span style={{
+                        textDecoration: item.is_completed ? 'line-through' : 'none',
+                        color: item.is_completed ? 'var(--text-muted)' : 'var(--text-secondary)'
+                      }}>
+                        {item.title}
+                      </span>
+                    </div>
+                  ))}
+                  {checklist.items.length > 3 && (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '20px' }}>
+                      +{checklist.items.length - 3} more items
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Active Milestones */}
+      {activeMilestones.length > 0 && (
+        <div className="card mb-xl">
+          <div className="card-title">
+            <CalendarIcon size={16} />
+            Active Milestones
+          </div>
+          <div className="flex-col gap-md">
+            {activeMilestones.map(milestone => {
+              const progress = milestone.calculated_progress?.percentage || 0;
+              const daysUntilDue = milestone.due_date
+                ? Math.ceil((new Date(milestone.due_date) - new Date()) / (1000 * 60 * 60 * 24))
+                : null;
+
+              return (
+                <div key={milestone.id} style={{
+                  padding: '12px',
+                  background: 'var(--background-secondary)',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-light)'
+                }}>
+                  <div className="flex-between" style={{ marginBottom: '8px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                        {milestone.title}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        {milestone.parentGoalTitle}
+                      </div>
+                    </div>
+                    <div style={{ flexShrink: 0, marginLeft: '12px' }}>
+                      <ProgressRing percentage={progress} size={50} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    <span style={{
+                      padding: '2px 6px',
+                      background: 'var(--border-light)',
+                      borderRadius: '4px'
+                    }}>
+                      {milestone.weight_percentage}% weight
+                    </span>
+                    {daysUntilDue !== null && (
+                      <span style={{
+                        padding: '2px 6px',
+                        background: daysUntilDue < 7 ? '#fef3c7' : 'var(--border-light)',
+                        color: daysUntilDue < 7 ? '#92400e' : 'var(--text-secondary)',
+                        borderRadius: '4px'
+                      }}>
+                        {daysUntilDue < 0 ? 'Overdue' : daysUntilDue === 0 ? 'Due today' : `${daysUntilDue}d remaining`}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -339,6 +601,119 @@ function LifeDashboard({ apiUrl }) {
           </div>
         </div>
       </div>
+
+      {/* Trends and Analytics */}
+      {timeframe !== 'today' && historicalData && (
+        <>
+          <div className="card mt-xl">
+            <div className="card-title">
+              <BarChart3 size={16} />
+              Nutrition Trends - Calories
+            </div>
+            <div className="chart-section">
+              <BarChart
+                data={historicalData.dailyStats.map(day => ({
+                  label: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                  value: day.calories
+                }))}
+                maxValue={settings?.daily_calories_target ? settings.daily_calories_target * 1.2 : undefined}
+                height={200}
+              />
+            </div>
+          </div>
+
+          <div className="stats-grid mt-xl">
+            <div className="card">
+              <div className="card-title">
+                <Activity size={16} />
+                Avg Calories
+              </div>
+              <div className="stat-large">
+                {historicalData.averages.calories.toLocaleString()}
+                <span className="stat-unit">cal/day</span>
+              </div>
+              {settings?.daily_calories_target && (
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  Target: {settings.daily_calories_target} cal
+                </div>
+              )}
+            </div>
+
+            <div className="card">
+              <div className="card-title">
+                <Target size={16} />
+                Goal Achievement
+              </div>
+              <div className="flex" style={{ justifyContent: 'center', padding: '16px 0' }}>
+                <ProgressRing
+                  percentage={historicalData.goalAchievementRate}
+                  size={100}
+                  label={`${timeframe === 'week' ? 'This Week' : timeframe === 'month' ? 'This Month' : 'Period Avg'}`}
+                />
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">
+                <TrendingUp size={16} />
+                Avg Activity
+              </div>
+              <div className="stat-large">
+                {historicalData.averages.steps.toLocaleString()}
+                <span className="stat-unit">steps/day</span>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                Sleep: {historicalData.averages.sleep_hours}h/night
+              </div>
+            </div>
+          </div>
+
+          <div className="card mt-xl">
+            <div className="card-title">
+              <LineChartIcon size={16} />
+              Steps Over Time
+            </div>
+            <div className="chart-section">
+              <LineChart
+                data={historicalData.dailyStats.map(day => ({
+                  label: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                  value: day.steps
+                }))}
+                height={200}
+              />
+            </div>
+          </div>
+
+          <div className="card mt-xl">
+            <div className="card-title">
+              <Droplets size={16} />
+              Hydration & Macros
+            </div>
+            <div className="stats-grid">
+              <div>
+                <div className="data-row">
+                  <span className="data-label">Avg Water</span>
+                  <span className="data-value">{historicalData.averages.water}ml</span>
+                </div>
+                <div className="data-row">
+                  <span className="data-label">Avg Protein</span>
+                  <span className="data-value">{historicalData.averages.protein}g</span>
+                </div>
+              </div>
+              <div>
+                <div className="data-row">
+                  <span className="data-label">Avg Carbs</span>
+                  <span className="data-value">{historicalData.averages.carbs}g</span>
+                </div>
+                <div className="data-row">
+                  <span className="data-label">Avg Fats</span>
+                  <span className="data-value">{historicalData.averages.fats}g</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

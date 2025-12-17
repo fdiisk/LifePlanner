@@ -191,8 +191,15 @@
 /* Date Selector */
 .dashboard-header {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 24px;
+}
+
+.timeframe-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .date-selector {
@@ -203,6 +210,26 @@
   border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 6px 10px;
+  align-self: flex-end;
+}
+
+.chart-section {
+  padding: 12px 0;
+}
+
+.stat-large {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 12px 0 8px;
+}
+
+.stat-unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: 6px;
 }
 
 .date-nav {
