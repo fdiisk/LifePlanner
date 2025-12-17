@@ -1,0 +1,195 @@
+/* ==========================================
+   CHART COMPONENTS
+   ========================================== */
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  padding: 16px 0;
+}
+
+/* ==========================================
+   BAR CHART
+   ========================================== */
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 100%;
+  gap: 8px;
+  padding: 24px 0 32px;
+}
+
+.bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 40px;
+  max-width: 80px;
+}
+
+.bar {
+  width: 100%;
+  min-height: 4px;
+  background: var(--accent-primary);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.bar:hover {
+  opacity: 0.8;
+}
+
+.bar-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.bar-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.bar-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.bar:hover .bar-tooltip {
+  display: block;
+}
+
+/* ==========================================
+   LINE CHART
+   ========================================== */
+
+.line-chart {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.chart-labels {
+  position: absolute;
+  left: -40px;
+  top: 0;
+  bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.chart-label-max, .chart-label-min {
+  display: block;
+}
+
+.chart-x-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.x-label {
+  text-align: center;
+  flex: 1;
+}
+
+/* ==========================================
+   PROGRESS RING
+   ========================================== */
+
+.progress-ring-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-ring {
+  transform: rotate(0deg);
+}
+
+.progress-ring circle {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.progress-ring-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.progress-ring-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.progress-ring-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ==========================================
+   TREND INDICATOR
+   ========================================== */
+
+.trend-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.trend-up {
+  color: #10b981;
+  background: #ecfdf5;
+}
+
+.trend-down {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.trend-arrow {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.trend-value {
+  font-size: 11px;
+}

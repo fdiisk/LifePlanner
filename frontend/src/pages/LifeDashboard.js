@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Droplets, TrendingUp, Star, Target } from 'lucide-react';
+import { Activity, Droplets, TrendingUp, Star, Target, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
+import { BarChart, LineChart, ProgressRing, TrendIndicator } from '../components/Charts';
 
 function LifeDashboard({ apiUrl }) {
   const [loading, setLoading] = useState(true);
@@ -9,6 +10,8 @@ function LifeDashboard({ apiUrl }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [goals, setGoals] = useState([]);
   const [achievements, setAchievements] = useState({});
+  const [timeframe, setTimeframe] = useState('today'); // today, yesterday, week, month, quarter, year
+  const [historicalData, setHistoricalData] = useState([]);
 
   const extractNutritionTargets = (goals) => {
     // Extract nutrition targets from daily goals
@@ -197,6 +200,15 @@ function LifeDashboard({ apiUrl }) {
     );
   }
 
+  const timeframes = [
+    { id: 'today', label: 'Today', days: 1 },
+    { id: 'yesterday', label: 'Yesterday', days: 1 },
+    { id: 'week', label: 'Last 7 Days', days: 7 },
+    { id: 'month', label: 'Last 30 Days', days: 30 },
+    { id: 'quarter', label: 'Last Quarter', days: 90 },
+    { id: 'year', label: 'Last Year', days: 365 }
+  ];
+
   return (
     <div className="life-dashboard">
       <div className="dashboard-header">
@@ -217,6 +229,18 @@ function LifeDashboard({ apiUrl }) {
             }}
           />
           <button className="date-nav" onClick={() => changeDate(1)}>→</button>
+        </div>
+
+        <div className="timeframe-selector">
+          {timeframes.map(tf => (
+            <button
+              key={tf.id}
+              className={`btn-sm ${timeframe === tf.id ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setTimeframe(tf.id)}
+            >
+              {tf.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -339,6 +363,87 @@ function LifeDashboard({ apiUrl }) {
           </div>
         </div>
       </div>
+
+      {/* Trends and Analytics */}
+      {timeframe !== 'today' && (
+        <>
+          <div className="card mt-xl">
+            <div className="card-title">
+              <BarChart3 size={16} />
+              Nutrition Trends
+            </div>
+            <div className="chart-section">
+              <BarChart
+                data={[
+                  { label: 'Mon', value: 2100 },
+                  { label: 'Tue', value: 1950 },
+                  { label: 'Wed', value: 2200 },
+                  { label: 'Thu', value: 2050 },
+                  { label: 'Fri', value: 2150 },
+                  { label: 'Sat', value: 2300 },
+                  { label: 'Sun', value: 2000 }
+                ]}
+                maxValue={2500}
+                height={200}
+              />
+            </div>
+          </div>
+
+          <div className="stats-grid mt-xl">
+            <div className="card">
+              <div className="card-title">
+                <LineChartIcon size={16} />
+                Weekly Average
+              </div>
+              <div className="stat-large">
+                2,107
+                <span className="stat-unit">cal/day</span>
+              </div>
+              <TrendIndicator value={2107} previousValue={2050} />
+            </div>
+
+            <div className="card">
+              <div className="card-title">
+                <Target size={16} />
+                Goal Achievement
+              </div>
+              <div className="flex" style={{ justifyContent: 'center', padding: '16px 0' }}>
+                <ProgressRing percentage={85} size={100} label="This Week" />
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">
+                <TrendingUp size={16} />
+                Activity Score
+              </div>
+              <div className="stat-large">
+                7,850
+                <span className="stat-unit">steps/day</span>
+              </div>
+              <TrendIndicator value={7850} previousValue={7200} />
+            </div>
+          </div>
+
+          <div className="card mt-xl">
+            <div className="card-title">
+              <LineChartIcon size={16} />
+              Progress Over Time
+            </div>
+            <div className="chart-section">
+              <LineChart
+                data={[
+                  { label: 'Week 1', value: 75 },
+                  { label: 'Week 2', value: 78 },
+                  { label: 'Week 3', value: 82 },
+                  { label: 'Week 4', value: 85 }
+                ]}
+                height={200}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
