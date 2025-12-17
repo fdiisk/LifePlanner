@@ -358,7 +358,7 @@ function GoalsSetup({ apiUrl }) {
       weekly: '#3b82f6',         // blue
       daily: '#0066ff'           // deep blue
     };
-    return colors[goalType] || '#6b7280';
+    return colors[goalType] || 'var(--text-secondary)';
   };
 
   const getStarRating = (goal) => {
@@ -553,7 +553,7 @@ function GoalsSetup({ apiUrl }) {
       <div className="goals-setup">
         <div style={{ textAlign: 'center', padding: '48px' }}>
           <Target className="spinner" size={32} />
-          <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading goals...</p>
+          <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>Loading goals...</p>
         </div>
       </div>
     );
@@ -592,20 +592,20 @@ function GoalsSetup({ apiUrl }) {
                 background: getGoalTypeColor(type),
                 borderRadius: '2px'
               }} />
-              <span style={{ color: '#6b7280', textTransform: 'capitalize' }}>
+              <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
                 {type.replace('_', ' ')}
               </span>
             </div>
           ))}
         </div>
-        <p style={{ marginTop: '8px', fontSize: '12px', color: '#9ca3af' }}>
+        <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
           Build your goals from high-level visions down to daily actions. Star ratings show achievement (1★ = attempted, 2★ = 70%+, 3★ = 90%+).
         </p>
       </div>
 
       {goals.length === 0 ? (
         <div className="empty-state">
-          <Target size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
+          <Target size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px' }} />
           <p>No goals yet. Set your nutrition goals or create a custom goal!</p>
         </div>
       ) : (
@@ -618,7 +618,7 @@ function GoalsSetup({ apiUrl }) {
         <div className="modal-overlay" onClick={() => setShowNutritionSetup(false)}>
           <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <h3><Activity size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Set Your Daily Nutrition Targets</h3>
-            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
               Enter your specific macro targets. These will be tracked on your dashboard.
             </p>
 
@@ -635,7 +635,7 @@ function GoalsSetup({ apiUrl }) {
                     required
                     style={{ flex: 1 }}
                   />
-                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>cal</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px', minWidth: '40px' }}>cal</span>
                 </div>
               </div>
 
@@ -651,7 +651,7 @@ function GoalsSetup({ apiUrl }) {
                     required
                     style={{ flex: 1 }}
                   />
-                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>grams</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px', minWidth: '40px' }}>grams</span>
                 </div>
               </div>
 
@@ -667,7 +667,7 @@ function GoalsSetup({ apiUrl }) {
                     required
                     style={{ flex: 1 }}
                   />
-                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>grams</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px', minWidth: '40px' }}>grams</span>
                 </div>
               </div>
 
@@ -683,7 +683,7 @@ function GoalsSetup({ apiUrl }) {
                     required
                     style={{ flex: 1 }}
                   />
-                  <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '40px' }}>grams</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px', minWidth: '40px' }}>grams</span>
                 </div>
               </div>
 
@@ -710,7 +710,7 @@ function GoalsSetup({ apiUrl }) {
         <div className="modal-overlay" onClick={() => { setEditingGroup(null); setGroupGoals([]); }}>
           <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <h3><Activity size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Edit All Nutrition Macros</h3>
-            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
               Update all your daily macro targets at once. Changes will be reflected on your dashboard.
             </p>
 
@@ -732,7 +732,7 @@ function GoalsSetup({ apiUrl }) {
                       required
                       style={{ flex: 1 }}
                     />
-                    <span style={{ color: '#6b7280', fontSize: '14px', minWidth: '60px' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '14px', minWidth: '60px' }}>
                       {goal.target_unit === 'cal' ? 'calories' : 'grams'}
                     </span>
                   </div>
@@ -756,7 +756,7 @@ function GoalsSetup({ apiUrl }) {
         <div className="modal-overlay" onClick={() => { setShowAddModal(false); setEditingGoal(null); resetForm(); }}>
           <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
             <h3>{editingGoal ? 'Edit Goal' : 'Add New Goal'}</h3>
-            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>
               {editingGoal ? 'Update your goal details below' : 'Create a new goal to track progress'}
             </p>
 
@@ -797,7 +797,7 @@ function GoalsSetup({ apiUrl }) {
                     background: getGoalTypeColor(formData.goal_type),
                     borderRadius: '2px'
                   }} />
-                  <small style={{ color: '#9ca3af', fontSize: '11px' }}>
+                  <small style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
                     Color-coded in tree view
                   </small>
                 </div>
@@ -821,7 +821,7 @@ function GoalsSetup({ apiUrl }) {
                     <option value="sleep">Sleep (hours)</option>
                     <option value="cardio">Cardio (km)</option>
                   </select>
-                  <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  <small style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                     Link this goal to a health metric for automatic achievement tracking
                   </small>
                 </div>
@@ -877,7 +877,7 @@ function GoalsSetup({ apiUrl }) {
                     onChange={(e) => setFormData({ ...formData, target_value: e.target.value })}
                     placeholder="e.g., 2000 (for calories), 150 (for protein)"
                   />
-                  <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  <small style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                     For nutrition: calories, protein/carbs/fats in grams
                   </small>
                 </div>
@@ -889,7 +889,7 @@ function GoalsSetup({ apiUrl }) {
                     onChange={(e) => setFormData({ ...formData, target_unit: e.target.value })}
                     placeholder="e.g., cal, g, kg"
                   />
-                  <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  <small style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                     Common: cal (calories), g (grams), kg, ml
                   </small>
                 </div>
@@ -906,7 +906,7 @@ function GoalsSetup({ apiUrl }) {
                       value={formData.star_threshold_2}
                       onChange={(e) => setFormData({ ...formData, star_threshold_2: parseInt(e.target.value) })}
                     />
-                    <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    <small style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                       Default: 70% (good achievement)
                     </small>
                   </div>
@@ -919,7 +919,7 @@ function GoalsSetup({ apiUrl }) {
                       value={formData.star_threshold_3}
                       onChange={(e) => setFormData({ ...formData, star_threshold_3: parseInt(e.target.value) })}
                     />
-                    <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    <small style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                       Default: 90% (excellent achievement)
                     </small>
                   </div>

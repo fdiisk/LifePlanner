@@ -68,7 +68,7 @@ function Settings({ apiUrl }) {
       <div className="settings">
         <div style={{ textAlign: 'center', padding: '48px' }}>
           <SettingsIcon className="spinner" size={32} />
-          <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading settings...</p>
+          <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>Loading settings...</p>
         </div>
       </div>
     );
@@ -80,7 +80,7 @@ function Settings({ apiUrl }) {
 
       <div className="settings-section" style={{ marginTop: '24px' }}>
         <h3><Activity size={18} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Daily Nutrition Goals</h3>
-        <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px', marginBottom: '20px' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px', marginBottom: '20px' }}>
           Set your daily nutrition targets. These will be used to track your progress on the dashboard.
         </p>
 

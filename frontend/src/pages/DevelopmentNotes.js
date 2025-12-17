@@ -228,7 +228,7 @@ function DevelopmentNotes() {
 
         <div className="edit-mode-info">
           <p><Edit size={16} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} /><strong>Edit Mode Active</strong></p>
-          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '8px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>
             Edit the markdown below. Use <code>[ ]</code> for unchecked and <code>[x]</code> for checked items in Phase 4.
           </p>
         </div>

@@ -176,40 +176,12 @@ function LifeDashboard({ apiUrl }) {
   const renderProgressBar = (label, current, target, unit = '') => {
     if (!target) return null;
 
-    const percentage = (current / target) * 100;
-    const difference = current - target;
-    const isOver = difference > 0;
-    const isClose = Math.abs(difference) <= target * 0.05; // Within 5%
-
     return (
-      <div className="stat-item" style={{ display: 'block' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-          <span className="stat-label">{label}</span>
-          <span className="stat-value">
-            {Math.round(current)}/{target}{unit}
-            <span style={{
-              marginLeft: '8px',
-              fontSize: '12px',
-              color: isClose ? '#10b981' : isOver ? '#ff8c00' : '#6b7280'
-            }}>
-              ({isOver ? '+' : ''}{Math.round(difference)}{unit})
-            </span>
-          </span>
-        </div>
-        <div style={{
-          width: '100%',
-          height: '6px',
-          background: '#e5e7eb',
-          borderRadius: '3px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            width: `${Math.min(percentage, 100)}%`,
-            height: '100%',
-            background: isClose ? '#10b981' : percentage > 100 ? '#ff8c00' : '#0066ff',
-            transition: 'width 0.3s ease'
-          }} />
-        </div>
+      <div className="data-row">
+        <span className="data-label">{label}</span>
+        <span className="data-value">
+          {Math.round(current)}/{target}{unit}
+        </span>
       </div>
     );
   };
@@ -219,7 +191,7 @@ function LifeDashboard({ apiUrl }) {
       <div className="life-dashboard">
         <div style={{ textAlign: 'center', padding: '48px' }}>
           <Activity className="spinner" size={32} />
-          <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading dashboard...</p>
+          <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>Loading dashboard...</p>
         </div>
       </div>
     );
@@ -234,30 +206,27 @@ function LifeDashboard({ apiUrl }) {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="date-nav"
+            style={{
+              border: 'none',
+              background: 'transparent',
+              fontSize: '13px',
+              fontWeight: 500,
+              color: 'var(--text-primary)',
+              padding: '4px 8px',
+              cursor: 'pointer'
+            }}
           />
           <button className="date-nav" onClick={() => changeDate(1)}>→</button>
         </div>
       </div>
 
-      <div style={{ marginBottom: '24px', padding: '12px 16px', background: displayData.status === 'compiled' ? 'rgba(0, 102, 255, 0.1)' : 'rgba(255, 165, 0, 0.1)', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {displayData.status === 'compiled' ? (
-          <>
-            <CheckCircle size={18} style={{ color: '#0066ff' }} />
-            <span style={{ color: '#0066ff', fontSize: '14px', fontWeight: 500 }}>Compiled & Reviewed</span>
-          </>
-        ) : (
-          <>
-            <AlertCircle size={18} style={{ color: '#ff8c00' }} />
-            <span style={{ color: '#ff8c00', fontSize: '14px', fontWeight: 500 }}>In Progress - Pending Review</span>
-          </>
-        )}
-      </div>
-
       {goals.length > 0 && (
-        <div className="stat-card" style={{ marginBottom: '24px' }}>
-          <h3><Target size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Daily Goals Progress</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="card mb-xl">
+          <div className="card-title">
+            <Target size={16} />
+            Daily Goals
+          </div>
+          <div className="flex-col gap-md">
             {goals.map(goal => {
               const achievement = achievements[goal.id];
               if (!achievement) return null;
@@ -268,46 +237,35 @@ function LifeDashboard({ apiUrl }) {
               const target = achievement.target || goal.target_value;
 
               return (
-                <div key={goal.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>{goal.title}</span>
+                <div key={goal.id} className="goal-list-item">
+                  <div className="flex-between">
+                    <div className="goal-header">
+                      <span className="goal-title-text">{goal.title}</span>
                       {goal.current_streak > 0 && (
-                        <span style={{ fontSize: '11px', color: '#92400e', background: '#fef3c7', padding: '1px 4px', borderRadius: '0.25rem' }}>
-                          🔥 {goal.current_streak}
+                        <span className="badge badge-warning">
+                          {goal.current_streak}d
                         </span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '12px', color: '#6b7280' }}>
-                        {achieved}/{target}{goal.target_unit} ({percentage}%)
+                    <div className="goal-header">
+                      <span className="goal-meta-text">
+                        {achieved}/{target}{goal.target_unit}
                       </span>
-                      <div style={{ display: 'flex', gap: '2px' }}>
+                      <div className="goal-stars">
                         {[1, 2, 3].map(i => (
                           <Star
                             key={i}
-                            size={14}
-                            fill={i <= stars ? '#fbbf24' : 'none'}
-                            stroke={i <= stars ? '#fbbf24' : '#d1d5db'}
+                            size={12}
+                            fill={i <= stars ? 'var(--accent-primary)' : 'none'}
+                            stroke={i <= stars ? 'var(--accent-primary)' : 'var(--border-default)'}
                             strokeWidth={1.5}
                           />
                         ))}
                       </div>
                     </div>
                   </div>
-                  <div style={{
-                    width: '100%',
-                    height: '4px',
-                    background: '#e5e7eb',
-                    borderRadius: '2px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      width: `${Math.min(percentage, 100)}%`,
-                      height: '100%',
-                      background: stars === 3 ? '#10b981' : stars === 2 ? '#f59e0b' : '#ef4444',
-                      transition: 'width 0.3s ease'
-                    }} />
+                  <div className="progress-bar-container">
+                    <div className="progress-bar-fill" style={{ width: `${Math.min(percentage, 100)}%` }} />
                   </div>
                 </div>
               );
@@ -316,9 +274,12 @@ function LifeDashboard({ apiUrl }) {
         </div>
       )}
 
-      <div className="stats-display">
-        <div className="stat-card">
-          <h3><Activity size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Nutrition</h3>
+      <div className="stats-grid">
+        <div className="card">
+          <div className="card-title">
+            <Activity size={16} />
+            Nutrition
+          </div>
           {settings ? (
             <>
               {renderProgressBar('Calories', displayData.calories, settings.daily_calories_target)}
@@ -328,52 +289,53 @@ function LifeDashboard({ apiUrl }) {
             </>
           ) : (
             <>
-              <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '0.25rem', marginBottom: '12px' }}>
-                <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                  Set nutrition goals in Goals Setup to track progress
-                </p>
+              <div className="data-row">
+                <span className="data-label">Calories</span>
+                <span className="data-value">{Math.round(displayData.calories)}</span>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Calories</span>
-                <span className="stat-value">{Math.round(displayData.calories)}</span>
+              <div className="data-row">
+                <span className="data-label">Protein</span>
+                <span className="data-value">{Math.round(displayData.protein)}g</span>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Protein</span>
-                <span className="stat-value">{Math.round(displayData.protein)}g</span>
+              <div className="data-row">
+                <span className="data-label">Carbs</span>
+                <span className="data-value">{Math.round(displayData.carbs)}g</span>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Carbs</span>
-                <span className="stat-value">{Math.round(displayData.carbs)}g</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Fats</span>
-                <span className="stat-value">{Math.round(displayData.fats)}g</span>
+              <div className="data-row">
+                <span className="data-label">Fats</span>
+                <span className="data-value">{Math.round(displayData.fats)}g</span>
               </div>
             </>
           )}
         </div>
 
-        <div className="stat-card">
-          <h3><Droplets size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Hydration & Stimulants</h3>
-          <div className="stat-item">
-            <span className="stat-label">Water</span>
-            <span className="stat-value">{displayData.water}ml</span>
+        <div className="card">
+          <div className="card-title">
+            <Droplets size={16} />
+            Hydration
           </div>
-          <div className="stat-item">
-            <span className="stat-label">Caffeine</span>
-            <span className="stat-value">{displayData.caffeine}mg</span>
+          <div className="data-row">
+            <span className="data-label">Water</span>
+            <span className="data-value">{displayData.water}ml</span>
+          </div>
+          <div className="data-row">
+            <span className="data-label">Caffeine</span>
+            <span className="data-value">{displayData.caffeine}mg</span>
           </div>
         </div>
 
-        <div className="stat-card">
-          <h3><TrendingUp size={20} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Activity & Recovery</h3>
-          <div className="stat-item">
-            <span className="stat-label">Steps</span>
-            <span className="stat-value">{displayData.steps.toLocaleString()}</span>
+        <div className="card">
+          <div className="card-title">
+            <TrendingUp size={16} />
+            Activity
           </div>
-          <div className="stat-item">
-            <span className="stat-label">Sleep</span>
-            <span className="stat-value">{displayData.sleepHours}h</span>
+          <div className="data-row">
+            <span className="data-label">Steps</span>
+            <span className="data-value">{displayData.steps.toLocaleString()}</span>
+          </div>
+          <div className="data-row">
+            <span className="data-label">Sleep</span>
+            <span className="data-value">{displayData.sleepHours}h</span>
           </div>
         </div>
       </div>
