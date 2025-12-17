@@ -11,7 +11,24 @@ function LifeDashboard({ apiUrl }) {
   const [goals, setGoals] = useState([]);
   const [achievements, setAchievements] = useState({});
   const [timeframe, setTimeframe] = useState('today'); // today, yesterday, week, month, quarter, year
-  const [historicalData, setHistoricalData] = useState([]);
+  const [historicalData, setHistoricalData] = useState(null);
+
+  // Fetch historical data when timeframe changes
+  useEffect(() => {
+    if (timeframe !== 'today') {
+      fetchHistoricalData();
+    }
+  }, [timeframe, selectedDate]);
+
+  const fetchHistoricalData = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/historical-stats?timeframe=${timeframe}&endDate=${selectedDate}`);
+      const data = await response.json();
+      setHistoricalData(data);
+    } catch (error) {
+      console.error('Error fetching historical data:', error);
+    }
+  };
 
   const extractNutritionTargets = (goals) => {
     // Extract nutrition targets from daily goals
@@ -365,25 +382,20 @@ function LifeDashboard({ apiUrl }) {
       </div>
 
       {/* Trends and Analytics */}
-      {timeframe !== 'today' && (
+      {timeframe !== 'today' && historicalData && (
         <>
           <div className="card mt-xl">
             <div className="card-title">
               <BarChart3 size={16} />
-              Nutrition Trends
+              Nutrition Trends - Calories
             </div>
             <div className="chart-section">
               <BarChart
-                data={[
-                  { label: 'Mon', value: 2100 },
-                  { label: 'Tue', value: 1950 },
-                  { label: 'Wed', value: 2200 },
-                  { label: 'Thu', value: 2050 },
-                  { label: 'Fri', value: 2150 },
-                  { label: 'Sat', value: 2300 },
-                  { label: 'Sun', value: 2000 }
-                ]}
-                maxValue={2500}
+                data={historicalData.dailyStats.map(day => ({
+                  label: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                  value: day.calories
+                }))}
+                maxValue={settings?.daily_calories_target ? settings.daily_calories_target * 1.2 : undefined}
                 height={200}
               />
             </div>
@@ -392,14 +404,18 @@ function LifeDashboard({ apiUrl }) {
           <div className="stats-grid mt-xl">
             <div className="card">
               <div className="card-title">
-                <LineChartIcon size={16} />
-                Weekly Average
+                <Activity size={16} />
+                Avg Calories
               </div>
               <div className="stat-large">
-                2,107
+                {historicalData.averages.calories.toLocaleString()}
                 <span className="stat-unit">cal/day</span>
               </div>
-              <TrendIndicator value={2107} previousValue={2050} />
+              {settings?.daily_calories_target && (
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  Target: {settings.daily_calories_target} cal
+                </div>
+              )}
             </div>
 
             <div className="card">
@@ -408,38 +424,71 @@ function LifeDashboard({ apiUrl }) {
                 Goal Achievement
               </div>
               <div className="flex" style={{ justifyContent: 'center', padding: '16px 0' }}>
-                <ProgressRing percentage={85} size={100} label="This Week" />
+                <ProgressRing
+                  percentage={historicalData.goalAchievementRate}
+                  size={100}
+                  label={`${timeframe === 'week' ? 'This Week' : timeframe === 'month' ? 'This Month' : 'Period Avg'}`}
+                />
               </div>
             </div>
 
             <div className="card">
               <div className="card-title">
                 <TrendingUp size={16} />
-                Activity Score
+                Avg Activity
               </div>
               <div className="stat-large">
-                7,850
+                {historicalData.averages.steps.toLocaleString()}
                 <span className="stat-unit">steps/day</span>
               </div>
-              <TrendIndicator value={7850} previousValue={7200} />
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                Sleep: {historicalData.averages.sleep_hours}h/night
+              </div>
             </div>
           </div>
 
           <div className="card mt-xl">
             <div className="card-title">
               <LineChartIcon size={16} />
-              Progress Over Time
+              Steps Over Time
             </div>
             <div className="chart-section">
               <LineChart
-                data={[
-                  { label: 'Week 1', value: 75 },
-                  { label: 'Week 2', value: 78 },
-                  { label: 'Week 3', value: 82 },
-                  { label: 'Week 4', value: 85 }
-                ]}
+                data={historicalData.dailyStats.map(day => ({
+                  label: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                  value: day.steps
+                }))}
                 height={200}
               />
+            </div>
+          </div>
+
+          <div className="card mt-xl">
+            <div className="card-title">
+              <Droplets size={16} />
+              Hydration & Macros
+            </div>
+            <div className="stats-grid">
+              <div>
+                <div className="data-row">
+                  <span className="data-label">Avg Water</span>
+                  <span className="data-value">{historicalData.averages.water}ml</span>
+                </div>
+                <div className="data-row">
+                  <span className="data-label">Avg Protein</span>
+                  <span className="data-value">{historicalData.averages.protein}g</span>
+                </div>
+              </div>
+              <div>
+                <div className="data-row">
+                  <span className="data-label">Avg Carbs</span>
+                  <span className="data-value">{historicalData.averages.carbs}g</span>
+                </div>
+                <div className="data-row">
+                  <span className="data-label">Avg Fats</span>
+                  <span className="data-value">{historicalData.averages.fats}g</span>
+                </div>
+              </div>
             </div>
           </div>
         </>
