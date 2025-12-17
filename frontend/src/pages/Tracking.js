@@ -12,9 +12,9 @@ function Tracking({ apiUrl, onLoadMeal }) {
       {/* Habits Tracking Section - Coming Soon */}
       <div className="tracking-section" style={{ marginTop: '24px' }}>
         <div style={{ padding: '32px 24px', textAlign: 'center', background: 'rgba(0, 0, 0, 0.02)', border: '1px solid rgba(0, 0, 0, 0.06)', borderRadius: '0.25rem' }}>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Coming Soon</div>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: '#1f2937', marginBottom: '8px' }}>Habits & Goals Tracking</div>
-          <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Coming Soon</div>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Habits & Goals Tracking</div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>
             Spreadsheet-like interface for daily habit tracking with rank-based scoring
           </p>
         </div>
