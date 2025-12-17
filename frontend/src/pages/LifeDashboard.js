@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Droplets, TrendingUp, AlertCircle, CheckCircle, Star, Target } from 'lucide-react';
+import { Activity, Droplets, TrendingUp, Star, Target } from 'lucide-react';
 
 function LifeDashboard({ apiUrl }) {
   const [loading, setLoading] = useState(true);
